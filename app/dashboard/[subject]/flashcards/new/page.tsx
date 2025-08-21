@@ -18,7 +18,8 @@ const BulkFlashcardEditor = dynamic(
   { ssr: false }
 );
 
-// ParsedFlashcard type for new page, excluding is_premium as it's a page-level state
+// ParsedFlashcard type for new page, does NOT include is_premium
+// This type should match what IndividualFlashcardInput and BulkFlashcardEditor return
 interface ParsedFlashcard {
   front_text: string;
   back_text: string;
@@ -59,18 +60,16 @@ export default function NewFlashcardPage({
     );
   }
 
-  // IndividualFlashcardInput's onCardsChange expects SingleFlashcard[], which does not have is_premium
+  // IndividualFlashcardInput's onCardsChange expects ParsedFlashcard[] here
   const handleIndividualCardsChange = (cards: ParsedFlashcard[]) => {
-    // No need to add is_premium here, it's applied during save
     setParsedFlashcards(cards);
   };
 
-  // BulkFlashcardEditor's onContentChange expects ParsedFlashcard[], which does not have is_premium
+  // BulkFlashcardEditor's onContentChange expects ParsedFlashcard[] here
   const handleBulkEditorChange = (
     cards: ParsedFlashcard[],
     rawHtml: string
   ) => {
-    // No need to add is_premium here, it's applied during save
     setParsedFlashcards(cards);
     setBulkEditorContent(rawHtml);
   };

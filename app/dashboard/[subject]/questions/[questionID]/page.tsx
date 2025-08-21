@@ -9,6 +9,14 @@ import { Question } from "@/types/supabase";
 import { ALL_GRADES, ALL_UNITS_DISPLAY } from "@/lib/constants";
 import { IndividualQuestionInput } from "@/components/IndividualQuestionInput";
 
+// Define the Props for this page explicitly to resolve TypeError
+interface EditQuestionPageProps {
+  params: {
+    subject: string;
+    questionID: string;
+  };
+}
+
 interface Option {
   key: string; // e.g., 'a', 'b', 'c', 'd'
   text: string;
@@ -21,17 +29,12 @@ interface SingleQuestionForInput {
   id?: string;
 }
 
-export default function EditQuestionPage({
-  params,
-}: {
-  params: { subject: string; questionID: string };
-}) {
+export default function EditQuestionPage({ params }: EditQuestionPageProps) {
   const { subject: loggedInSubject, loading } = useAuth();
   const router = useRouter();
 
   const [questionGrade, setQuestionGrade] = useState("");
-  // FIX: Initialize questionUnit as empty string for select dropdown
-  const [questionUnit, setQuestionUnit] = useState("");
+  const [questionUnit, setQuestionUnit] = useState(""); // Initialize as empty string for select dropdown
   const [isSaving, setIsSaving] = useState(false);
   const [pageLoading, setPageLoading] = useState(true);
 
@@ -64,7 +67,7 @@ export default function EditQuestionPage({
           setQuestionGrade(data.grade || "");
           setQuestionUnit(data.unit || "");
 
-          // FIX: Explicitly type 'opt' as string
+          // FIX: Explicitly type 'opt' as string in map function
           const transformedOptions: Option[] = (data.options || []).map(
             (opt: string) => {
               const match = opt.match(/^([a-zA-Z])[\.:]?\s*(.*)/); // Match "a.", "A:", "a" etc.
@@ -92,7 +95,7 @@ export default function EditQuestionPage({
       };
       fetchQuestion();
     } else {
-      router.push(`/dashboard/${subject}/questions/new`);
+      router.push(`/dashboard/${subject}/questions/new`); // Redirect to the proper new page
     }
   }, [questionID, loading, loggedInSubject, subject, router]);
 
@@ -205,8 +208,8 @@ export default function EditQuestionPage({
           ))}
         </select>
         <select
-          value={questionUnit || ""} // FIX: Ensure value is string
-          onChange={(e) => setQuestionUnit(e.target.value || "")} // FIX: Ensure set state is string
+          value={questionUnit || ""} // Ensure value is string
+          onChange={(e) => setQuestionUnit(e.target.value || "")} // Ensure set state is string
           className="px-4 py-2 text-white bg-gray-800 border border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
         >
           <option value="">Select a Unit...</option>

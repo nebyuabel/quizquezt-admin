@@ -7,7 +7,15 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/AuthContext";
 import { supabase } from "@/lib/supabase";
 import { Note } from "@/types/supabase";
-import { ALL_GRADES, ALL_UNITS_DISPLAY } from "@/lib/constants"; // Import ALL_UNITS_DISPLAY
+import { ALL_GRADES, ALL_UNITS_DISPLAY } from "@/lib/constants";
+
+// Define the Props for this page explicitly
+interface EditNotePageProps {
+  params: {
+    subject: string;
+    noteID: string;
+  };
+}
 
 // Dynamically import the TiptapEditor component with SSR disabled
 const TiptapEditor = dynamic(
@@ -15,11 +23,8 @@ const TiptapEditor = dynamic(
   { ssr: false }
 );
 
-export default function NoteEditor({
-  params,
-}: {
-  params: { subject: string; noteID: string };
-}) {
+export default function NoteEditor({ params }: EditNotePageProps) {
+  // Use the explicit props interface
   const { subject: loggedInSubject, loading } = useAuth();
   const router = useRouter();
   const [noteTitle, setNoteTitle] = useState("");

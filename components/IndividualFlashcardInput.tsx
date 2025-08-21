@@ -100,7 +100,7 @@ export const IndividualFlashcardInput: React.FC<
               onChange={(e) => updateCard(index, "front_text", e.target.value)}
               placeholder="e.g., Capital of France"
               rows={2}
-              className="w-full px-3 py-2 bg-gray-800 border border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
+              className="w-full px-3 py-2 bg-gray-800 border border-gray-600 rounded-md text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500"
             />
           </div>
           <div>
@@ -116,7 +116,7 @@ export const IndividualFlashcardInput: React.FC<
               onChange={(e) => updateCard(index, "back_text", e.target.value)}
               placeholder="e.g., Paris"
               rows={2}
-              className="w-full px-3 py-2 bg-gray-800 border border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
+              className="w-full px-3 py-2 bg-gray-800 border border-gray-600 rounded-md text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500"
             />
           </div>
         </div>
