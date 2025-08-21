@@ -9,13 +9,8 @@ import { Question } from "@/types/supabase";
 import { ALL_GRADES, ALL_UNITS_DISPLAY } from "@/lib/constants";
 import { IndividualQuestionInput } from "@/components/IndividualQuestionInput";
 
-// Define the Props for this page explicitly to resolve TypeError
-interface EditQuestionPageProps {
-  params: {
-    subject: string;
-    questionID: string;
-  };
-}
+// Removed explicit EditQuestionPageProps interface to resolve TypeError
+// The params type is now directly in the function signature
 
 interface Option {
   key: string; // e.g., 'a', 'b', 'c', 'd'
@@ -29,7 +24,12 @@ interface SingleQuestionForInput {
   id?: string;
 }
 
-export default function EditQuestionPage({ params }: EditQuestionPageProps) {
+// FIX: Directly define the type of 'params' in the function signature
+export default function EditQuestionPage({
+  params,
+}: {
+  params: { subject: string; questionID: string };
+}) {
   const { subject: loggedInSubject, loading } = useAuth();
   const router = useRouter();
 

@@ -9,22 +9,18 @@ import { supabase } from "@/lib/supabase";
 import { Note } from "@/types/supabase";
 import { ALL_GRADES, ALL_UNITS_DISPLAY } from "@/lib/constants";
 
-// Define the Props for this page explicitly
-interface EditNotePageProps {
-  params: {
-    subject: string;
-    noteID: string;
-  };
-}
-
 // Dynamically import the TiptapEditor component with SSR disabled
 const TiptapEditor = dynamic(
   () => import("@/components/TipTapEditor").then((mod) => mod.TiptapEditor),
   { ssr: false }
 );
 
-export default function NoteEditor({ params }: EditNotePageProps) {
-  // Use the explicit props interface
+// FIX: Directly define the type of 'params' in the function signature
+export default function NoteEditor({
+  params,
+}: {
+  params: { subject: string; noteID: string };
+}) {
   const { subject: loggedInSubject, loading } = useAuth();
   const router = useRouter();
   const [noteTitle, setNoteTitle] = useState("");
@@ -58,6 +54,7 @@ export default function NoteEditor({ params }: EditNotePageProps) {
 
         if (error || !data) {
           console.error("Error fetching note:", error);
+          alert("Note not found or an error occurred.");
           router.push(`/dashboard/${subject}/notes`);
         } else {
           setNoteTitle(data.title || "");

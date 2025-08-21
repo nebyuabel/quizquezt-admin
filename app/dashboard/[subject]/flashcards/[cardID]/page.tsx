@@ -9,13 +9,8 @@ import { Flashcard } from "@/types/supabase";
 import { ALL_GRADES, ALL_UNITS_DISPLAY } from "@/lib/constants";
 import { IndividualFlashcardInput } from "@/components/IndividualFlashcardInput";
 
-// Define the Props for this page explicitly to resolve TypeError
-interface EditFlashcardPageProps {
-  params: {
-    subject: string;
-    cardID: string;
-  };
-}
+// Removed explicit EditFlashcardPageProps interface to resolve TypeError
+// The params type is now directly in the function signature
 
 interface SingleFlashcardForInput {
   front_text: string;
@@ -23,8 +18,12 @@ interface SingleFlashcardForInput {
   id?: string;
 }
 
-export default function EditFlashcardPage({ params }: EditFlashcardPageProps) {
-  // Use the explicit props interface
+// FIX: Directly define the type of 'params' in the function signature
+export default function EditFlashcardPage({
+  params,
+}: {
+  params: { subject: string; cardID: string };
+}) {
   const { subject: loggedInSubject, loading } = useAuth();
   const router = useRouter();
 
