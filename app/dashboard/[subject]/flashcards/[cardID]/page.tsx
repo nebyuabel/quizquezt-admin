@@ -18,7 +18,7 @@ interface SingleFlashcardForInput {
   id?: string;
 }
 
-// FIX: Directly define the type of 'params' in the function signature
+// Directly define the type of 'params' in the function signature
 export default function EditFlashcardPage({
   params,
 }: {
@@ -64,7 +64,7 @@ export default function EditFlashcardPage({
             {
               id: data.id,
               front_text: data.front_text,
-              back_text: data.back_text,
+              back_text: data.back_back,
             },
           ]);
         }
