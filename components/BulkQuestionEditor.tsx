@@ -128,7 +128,6 @@ d. Venus`,
             .trim();
 
           currentQuestion = {
-            // Ensure currentQuestion is always assigned correctly typed object
             question_text: questionText,
             options: [],
             correct_answer: "",
@@ -141,7 +140,8 @@ d. Venus`,
           const optionMatch = trimmedLine.match(/^([a-zA-Z][\.:]?)\s*(.*)/i);
 
           if (optionMatch) {
-            let optionPrefix = optionMatch[1]
+            // FIX: Changed 'let' to 'const' for optionPrefix
+            const optionPrefix = optionMatch[1]
               .replace(/[\.:]/g, "")
               .trim()
               .toLowerCase();
@@ -157,7 +157,7 @@ d. Venus`,
             currentQuestion.options.push({
               key: optionPrefix,
               text: optionTextContent,
-            }); // Store as Option object
+            });
             expectingOptions = true;
           } else if (currentQuestion.options.length === 0) {
             currentQuestion.question_text += `\n${trimmedLine}`;
