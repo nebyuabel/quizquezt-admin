@@ -1,3 +1,4 @@
+// CreateFlashcardClient.tsx
 "use client";
 
 import { useState, useEffect } from "react";
@@ -13,10 +14,11 @@ interface SingleFlashcardForInput {
   id?: string;
 }
 
+// Correct the props type definition to match the page component.
 export default function CreateFlashcardClient({
   params,
 }: {
-  params: Promise<{ subject: string }>;
+  params: { subject: string };
 }) {
   const [subject, setSubject] = useState("");
   const { subject: loggedInSubject, loading } = useAuth();
@@ -30,12 +32,9 @@ export default function CreateFlashcardClient({
   const [cardToEdit, setCardToEdit] = useState<SingleFlashcardForInput[]>([]);
 
   useEffect(() => {
-    const fetchParams = async () => {
-      const { subject: fetchedSubject } = await params;
-      setSubject(fetchedSubject);
-    };
-
-    fetchParams();
+    // You can now directly access params.subject since it's not a Promise.
+    const { subject: fetchedSubject } = params;
+    setSubject(fetchedSubject);
   }, [params]);
 
   useEffect(() => {
@@ -57,6 +56,7 @@ export default function CreateFlashcardClient({
     }
   }, [loading, loggedInSubject, subject, router]);
 
+  // Rest of your component logic remains the same.
   const handleIndividualCardsChange = (cards: SingleFlashcardForInput[]) => {
     setCardToEdit(cards.length > 0 ? [cards[0]] : []);
   };
