@@ -1,11 +1,14 @@
 // app/layout.tsx
-import "./globals.css";
-import { AuthProvider } from "@/lib/AuthContext";
-import type { Metadata } from "next";
+import "./globals.css"; // Import global CSS (Tailwind)
+import { Inter } from "next/font/google"; // Import Inter font
+import { AuthProvider } from "@/lib/AuthContext"; // Import your AuthContext
 
-export const metadata: Metadata = {
+const inter = Inter({ subsets: ["latin"] });
+
+// Metadata for your application
+export const metadata = {
   title: "QuizQuest Admin",
-  description: "Admin dashboard for QuizQuest.",
+  description: "Admin panel for managing QuizQuest content",
 };
 
 export default function RootLayout({
@@ -14,8 +17,11 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en">
-      <body>
+    <html lang="en" className="dark">
+      {" "}
+      {/* Use dark mode class if desired */}
+      <body className={inter.className}>
+        {/* Wrap your entire application with AuthContextProvider */}
         <AuthProvider>{children}</AuthProvider>
       </body>
     </html>
