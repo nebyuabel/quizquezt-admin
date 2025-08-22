@@ -2,14 +2,11 @@
 import { type FC } from "react";
 import EditFlashcardClient from "./EditFlashcardClient";
 
-// Explicitly type params this way:
-// Explicitly type params this way:
+// Correctly type params as a function that returns a Promise
 interface FlashcardPageProps {
-  params: {
-    subject: string;
-    cardID: string;
-  };
+  params: () => Promise<{ subject: string; cardID: string }>;
 }
+
 const Page: FC<FlashcardPageProps> = ({ params }) => {
   return <EditFlashcardClient params={params} />;
 };

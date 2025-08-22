@@ -16,9 +16,10 @@ interface SingleFlashcardForInput {
 export default function EditFlashcardClient({
   params,
 }: {
-  params: { subject: string; cardID: string };
+  params: () => Promise<{ subject: string; cardID: string }>;
 }) {
-  const { subject, cardID } = params;
+  const [subject, setSubject] = useState("");
+  const [cardID, setCardID] = useState("");
   const { subject: loggedInSubject, loading } = useAuth();
   const router = useRouter();
 
@@ -28,6 +29,16 @@ export default function EditFlashcardClient({
   const [isSaving, setIsSaving] = useState(false);
   const [pageLoading, setPageLoading] = useState(true);
   const [cardToEdit, setCardToEdit] = useState<SingleFlashcardForInput[]>([]);
+
+  useEffect(() => {
+    const fetchParams = async () => {
+      const { subject: fetchedSubject, cardID: fetchedCardID } = await params();
+      setSubject(fetchedSubject);
+      setCardID(fetchedCardID);
+    };
+
+    fetchParams();
+  }, [params]);
 
   useEffect(() => {
     if (
@@ -58,7 +69,7 @@ export default function EditFlashcardClient({
               front_text: data.front_text,
               back_text: data.back_text,
             },
-          ]); // ✅ fixed typo
+          ]);
         }
         setPageLoading(false);
       };
