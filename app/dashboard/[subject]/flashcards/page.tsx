@@ -1,7 +1,7 @@
 // app/dashboard/[subject]/flashcards/page.tsx
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect } from "react"; // 'use' removed
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/lib/AuthContext";
 import { useRouter } from "next/navigation";
@@ -13,11 +13,14 @@ import {
 } from "@/lib/constants";
 import { ConfirmationModal } from "@/components/ConfirmationModal";
 
+// FIX: Access params directly, remove React.use()
 export default function FlashcardsPage({
   params,
 }: {
   params: { subject: string };
 }) {
+  const { subject: routeSubject } = params; // Direct access
+
   const { subject: loggedInSubject, loading } = useAuth();
   const router = useRouter();
   const [flashcards, setFlashcards] = useState<Flashcard[]>([]);
@@ -36,7 +39,7 @@ export default function FlashcardsPage({
     let query = supabase
       .from("flashcards")
       .select("*")
-      .ilike("subject", params.subject);
+      .ilike("subject", routeSubject);
 
     if (selectedGrade) {
       query = query.eq("grade", selectedGrade);
@@ -69,14 +72,14 @@ export default function FlashcardsPage({
     if (
       !loading &&
       loggedInSubject &&
-      loggedInSubject.toLowerCase() === params.subject.toLowerCase()
+      loggedInSubject.toLowerCase() === routeSubject.toLowerCase()
     ) {
       fetchFlashcards();
     }
   }, [
     loading,
     loggedInSubject,
-    params.subject,
+    routeSubject,
     selectedGrade,
     selectedUnit,
     searchQuery,
@@ -85,7 +88,7 @@ export default function FlashcardsPage({
   if (
     loading ||
     !loggedInSubject ||
-    loggedInSubject.toLowerCase() !== params.subject.toLowerCase()
+    loggedInSubject.toLowerCase() !== routeSubject.toLowerCase()
   ) {
     return (
       <div className="flex justify-center items-center min-h-screen bg-gray-900">
@@ -125,10 +128,9 @@ export default function FlashcardsPage({
   return (
     <div className="p-8">
       <div className="flex items-center justify-between mb-6">
-        {/* Back Button to Subject Dashboard */}
         <div className="flex items-center">
           <button
-            onClick={() => router.push(`/dashboard/${params.subject}`)}
+            onClick={() => router.push(`/dashboard/${routeSubject}`)}
             className="mr-4 p-2 rounded-full bg-gray-700 hover:bg-gray-600 transition-colors"
             title="Go back to Dashboard"
           >
@@ -154,7 +156,7 @@ export default function FlashcardsPage({
         </div>
         <button
           onClick={() =>
-            router.push(`/dashboard/${params.subject}/flashcards/new`)
+            router.push(`/dashboard/${routeSubject}/flashcards/new`)
           }
           className="px-6 py-2 rounded-md bg-purple-600 hover:bg-purple-700 transition-colors"
         >
@@ -241,7 +243,7 @@ export default function FlashcardsPage({
                 <div
                   onClick={() =>
                     router.push(
-                      `/dashboard/${params.subject}/flashcards/${card.id}`
+                      `/dashboard/${routeSubject}/flashcards/${card.id}`
                     )
                   }
                   className="cursor-pointer"

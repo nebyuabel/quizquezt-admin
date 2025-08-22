@@ -1,7 +1,7 @@
 // app/dashboard/[subject]/flashcards/new/page.tsx
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect } from "react"; // 'use' removed
 import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/AuthContext";
@@ -18,18 +18,19 @@ const BulkFlashcardEditor = dynamic(
   { ssr: false }
 );
 
-// ParsedFlashcard type for new page, does NOT include is_premium
-// This type should match what IndividualFlashcardInput and BulkFlashcardEditor return
 interface ParsedFlashcard {
   front_text: string;
   back_text: string;
 }
 
+// FIX: Access params directly, remove React.use()
 export default function NewFlashcardPage({
   params,
 }: {
   params: { subject: string };
 }) {
+  const { subject: routeSubject } = params; // Direct access
+
   const { subject: loggedInSubject, loading } = useAuth();
   const router = useRouter();
 
@@ -46,12 +47,10 @@ export default function NewFlashcardPage({
   );
   const [bulkEditorContent, setBulkEditorContent] = useState("");
 
-  const { subject } = params;
-
   if (
     loading ||
     !loggedInSubject ||
-    loggedInSubject.toLowerCase() !== subject.toLowerCase()
+    loggedInSubject.toLowerCase() !== routeSubject.toLowerCase()
   ) {
     return (
       <div className="flex justify-center items-center min-h-screen bg-gray-900">
@@ -60,12 +59,10 @@ export default function NewFlashcardPage({
     );
   }
 
-  // IndividualFlashcardInput's onCardsChange expects ParsedFlashcard[] here
   const handleIndividualCardsChange = (cards: ParsedFlashcard[]) => {
     setParsedFlashcards(cards);
   };
 
-  // BulkFlashcardEditor's onContentChange expects ParsedFlashcard[] here
   const handleBulkEditorChange = (
     cards: ParsedFlashcard[],
     rawHtml: string
@@ -89,11 +86,11 @@ export default function NewFlashcardPage({
     }
 
     const flashcardsToInsert = parsedFlashcards.map((card) => ({
-      ...card, // Contains front_text, back_text
+      ...card,
       grade: flashcardGrade,
       subject: loggedInSubject,
       unit: flashcardUnit,
-      is_premium: isPremium, // is_premium is added from the page's state here
+      is_premium: isPremium,
     }));
 
     const { error } = await supabase
@@ -105,7 +102,7 @@ export default function NewFlashcardPage({
       console.error(error);
     } else {
       alert("Flashcards created successfully!");
-      router.push(`/dashboard/${subject}/flashcards`);
+      router.push(`/dashboard/${routeSubject}/flashcards`);
     }
     setIsSaving(false);
   };
@@ -114,7 +111,7 @@ export default function NewFlashcardPage({
     <div className="p-8 min-h-screen flex flex-col">
       <div className="flex items-center mb-6">
         <button
-          onClick={() => router.push(`/dashboard/${subject}/flashcards`)}
+          onClick={() => router.push(`/dashboard/${routeSubject}/flashcards`)}
           className="mr-4 p-2 rounded-full bg-gray-700 hover:bg-gray-600 transition-colors"
           title="Go back to Flashcards"
         >
@@ -135,7 +132,7 @@ export default function NewFlashcardPage({
           </svg>
         </button>
         <h1 className="text-3xl font-bold text-white">
-          Create New Flashcards for {subject}
+          Create New Flashcards for {routeSubject}
         </h1>
       </div>
 
@@ -215,7 +212,7 @@ export default function NewFlashcardPage({
 
       <div className="flex justify-end space-x-4 mt-auto">
         <button
-          onClick={() => router.push(`/dashboard/${subject}/flashcards`)}
+          onClick={() => router.push(`/dashboard/${routeSubject}/flashcards`)}
           className="px-6 py-2 rounded-md bg-gray-600 hover:bg-gray-700 transition-colors"
         >
           Cancel

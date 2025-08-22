@@ -1,7 +1,7 @@
 // app/dashboard/[subject]/questions/[questionID]/page.tsx
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect } from "react"; // 'use' removed
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/AuthContext";
 import { supabase } from "@/lib/supabase";
@@ -9,32 +9,31 @@ import { Question } from "@/types/supabase";
 import { ALL_GRADES, ALL_UNITS_DISPLAY } from "@/lib/constants";
 import { IndividualQuestionInput } from "@/components/IndividualQuestionInput";
 
-// Removed explicit EditQuestionPageProps interface to resolve TypeError
-// The params type is now directly in the function signature
-
 interface Option {
-  key: string; // e.g., 'a', 'b', 'c', 'd'
+  key: string;
   text: string;
 }
 
 interface SingleQuestionForInput {
   question_text: string;
-  options: Option[]; // Expects array of Option objects
-  correct_answer: string; // Full text of correct option (e.g., "a. Option Text")
+  options: Option[];
+  correct_answer: string;
   id?: string;
 }
 
-// FIX: Directly define the type of 'params' in the function signature
+// FIX: Access params directly, remove React.use()
 export default function EditQuestionPage({
   params,
 }: {
   params: { subject: string; questionID: string };
 }) {
+  const { subject: routeSubject, questionID } = params; // Direct access
+
   const { subject: loggedInSubject, loading } = useAuth();
   const router = useRouter();
 
   const [questionGrade, setQuestionGrade] = useState("");
-  const [questionUnit, setQuestionUnit] = useState(""); // Initialize as empty string for select dropdown
+  const [questionUnit, setQuestionUnit] = useState("");
   const [isSaving, setIsSaving] = useState(false);
   const [pageLoading, setPageLoading] = useState(true);
 
@@ -42,14 +41,12 @@ export default function EditQuestionPage({
     SingleQuestionForInput[]
   >([]);
 
-  const { subject, questionID } = params;
-
   useEffect(() => {
     if (
       questionID !== "new" &&
       !loading &&
       loggedInSubject &&
-      loggedInSubject.toLowerCase() === subject.toLowerCase()
+      loggedInSubject.toLowerCase() === routeSubject.toLowerCase()
     ) {
       const fetchQuestion = async () => {
         setPageLoading(true);
@@ -62,22 +59,20 @@ export default function EditQuestionPage({
         if (error || !data) {
           console.error("Error fetching question:", error);
           alert("Question not found or an error occurred.");
-          router.push(`/dashboard/${subject}/questions`);
+          router.push(`/dashboard/${routeSubject}/questions`);
         } else {
           setQuestionGrade(data.grade || "");
           setQuestionUnit(data.unit || "");
 
-          // FIX: Explicitly type 'opt' as string in map function
           const transformedOptions: Option[] = (data.options || []).map(
             (opt: string) => {
-              const match = opt.match(/^([a-zA-Z])[\.:]?\s*(.*)/); // Match "a.", "A:", "a" etc.
+              const match = opt.match(/^([a-zA-Z])[\.:]?\s*(.*)/);
               if (match) {
                 return {
-                  key: match[1].toLowerCase(), // Store 'a', 'b', etc.
-                  text: match[2].trim(), // Store just the text
+                  key: match[1].toLowerCase(),
+                  text: match[2].trim(),
                 };
               }
-              // Fallback for malformed options if any
               return { key: "", text: opt || "" };
             }
           );
@@ -87,7 +82,7 @@ export default function EditQuestionPage({
               id: data.id,
               question_text: data.question_text || "",
               options: transformedOptions,
-              correct_answer: data.correct_answer || "", // correct_answer is already full string "a. Option Text"
+              correct_answer: data.correct_answer || "",
             },
           ]);
         }
@@ -95,9 +90,9 @@ export default function EditQuestionPage({
       };
       fetchQuestion();
     } else {
-      router.push(`/dashboard/${subject}/questions/new`); // Redirect to the proper new page
+      router.push(`/dashboard/${routeSubject}/questions/new`);
     }
-  }, [questionID, loading, loggedInSubject, subject, router]);
+  }, [questionID, loading, loggedInSubject, routeSubject, router]);
 
   const handleIndividualQuestionsChange = (
     questions: SingleQuestionForInput[]
@@ -148,7 +143,7 @@ export default function EditQuestionPage({
       console.error(error);
     } else {
       alert("Question updated successfully!");
-      router.push(`/dashboard/${subject}/questions`);
+      router.push(`/dashboard/${routeSubject}/questions`);
     }
     setIsSaving(false);
   };
@@ -157,7 +152,7 @@ export default function EditQuestionPage({
     loading ||
     pageLoading ||
     !loggedInSubject ||
-    loggedInSubject.toLowerCase() !== subject.toLowerCase()
+    loggedInSubject.toLowerCase() !== routeSubject.toLowerCase()
   ) {
     return (
       <div className="flex justify-center items-center min-h-screen bg-gray-900">
@@ -170,7 +165,7 @@ export default function EditQuestionPage({
     <div className="p-8 min-h-screen flex flex-col">
       <div className="flex items-center mb-6">
         <button
-          onClick={() => router.push(`/dashboard/${subject}/questions`)}
+          onClick={() => router.push(`/dashboard/${routeSubject}/questions`)}
           className="mr-4 p-2 rounded-full bg-gray-700 hover:bg-gray-600 transition-colors"
           title="Go back to Questions"
         >
@@ -208,8 +203,8 @@ export default function EditQuestionPage({
           ))}
         </select>
         <select
-          value={questionUnit || ""} // Ensure value is string
-          onChange={(e) => setQuestionUnit(e.target.value || "")} // Ensure set state is string
+          value={questionUnit || ""}
+          onChange={(e) => setQuestionUnit(e.target.value || "")}
           className="px-4 py-2 text-white bg-gray-800 border border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
         >
           <option value="">Select a Unit...</option>
@@ -230,7 +225,7 @@ export default function EditQuestionPage({
 
       <div className="flex justify-end space-x-4 mt-auto">
         <button
-          onClick={() => router.push(`/dashboard/${subject}/questions`)}
+          onClick={() => router.push(`/dashboard/${routeSubject}/questions`)}
           className="px-6 py-2 rounded-md bg-gray-600 hover:bg-gray-700 transition-colors"
         >
           Cancel

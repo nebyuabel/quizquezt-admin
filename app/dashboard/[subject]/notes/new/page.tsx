@@ -1,46 +1,45 @@
 // app/dashboard/[subject]/notes/new/page.tsx
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect } from "react"; // 'use' removed
 import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/AuthContext";
 import { supabase } from "@/lib/supabase";
 import { Note } from "@/types/supabase";
-import { ALL_GRADES, ALL_UNITS_DISPLAY } from "@/lib/constants"; // Import ALL_UNITS_DISPLAY
+import { ALL_GRADES, ALL_UNITS_DISPLAY } from "@/lib/constants";
 
-// Dynamically import the TiptapEditor component with SSR disabled
 const TiptapEditor = dynamic(
   () => import("@/components/TipTapEditor").then((mod) => mod.TiptapEditor),
   { ssr: false }
 );
 
+// FIX: Access params directly, remove React.use()
 export default function NewNotePage({
   params,
 }: {
   params: { subject: string };
 }) {
+  const { subject: routeSubject } = params; // Direct access
+
   const { subject: loggedInSubject, loading } = useAuth();
   const router = useRouter();
   const [noteTitle, setNoteTitle] = useState("");
   const [noteContent, setNoteContent] = useState("");
   const [noteGrade, setNoteGrade] = useState("");
-  const [noteUnit, setNoteUnit] = useState(""); // Initialize with empty string for dropdown
+  const [noteUnit, setNoteUnit] = useState("");
   const [isPremium, setIsPremium] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
-  const [isClient, setIsClient] = useState(false); // To control client-side rendering of Tiptap
-
-  const { subject } = params;
+  const [isClient, setIsClient] = useState(false);
 
   useEffect(() => {
-    setIsClient(true); // Component has mounted on client
+    setIsClient(true);
   }, []);
 
-  // Protect the route
   if (
     loading ||
     !loggedInSubject ||
-    loggedInSubject.toLowerCase() !== subject.toLowerCase()
+    loggedInSubject.toLowerCase() !== routeSubject.toLowerCase()
   ) {
     return (
       <div className="flex justify-center items-center min-h-screen bg-gray-900">
@@ -61,9 +60,9 @@ export default function NewNotePage({
       title: noteTitle,
       content: noteContent,
       grade: noteGrade,
-      unit: noteUnit, // Use selected unit
+      unit: noteUnit,
       is_premium: isPremium,
-      subject: loggedInSubject, // Use loggedInSubject from AuthContext
+      subject: loggedInSubject,
     };
 
     const { error } = await supabase.from("notes").insert([noteData]);
@@ -73,16 +72,39 @@ export default function NewNotePage({
       console.error(error);
     } else {
       alert("Note created successfully!");
-      router.push(`/dashboard/${subject}/notes`);
+      router.push(`/dashboard/${routeSubject}/notes`);
     }
     setIsSaving(false);
   };
 
   return (
     <div className="p-8 min-h-screen flex flex-col">
-      <h1 className="text-3xl font-bold mb-6 text-white">
-        Create New Note for {subject}
-      </h1>
+      <div className="flex items-center mb-6">
+        <button
+          onClick={() => router.push(`/dashboard/${routeSubject}/notes`)}
+          className="mr-4 p-2 rounded-full bg-gray-700 hover:bg-gray-600 transition-colors"
+          title="Go back to Notes"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="24"
+            height="24"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            className="lucide lucide-arrow-left text-white"
+          >
+            <path d="m12 19-7-7 7-7" />
+            <path d="M19 12H5" />
+          </svg>
+        </button>
+        <h1 className="text-3xl font-bold text-white">
+          Create New Note for {routeSubject}
+        </h1>
+      </div>
       <input
         type="text"
         value={noteTitle}
@@ -104,7 +126,6 @@ export default function NewNotePage({
             </option>
           ))}
         </select>
-        {/* Unit Selection Dropdown */}
         <select
           value={noteUnit}
           onChange={(e) => setNoteUnit(e.target.value)}
@@ -128,7 +149,6 @@ export default function NewNotePage({
         <span className="ml-2 text-white">Premium Content</span>
       </label>
       <div className="flex-1">
-        {/* Ensure TiptapEditor is only rendered on the client */}
         {isClient && (
           <TiptapEditor
             initialContent={noteContent}
@@ -138,7 +158,7 @@ export default function NewNotePage({
       </div>
       <div className="flex justify-end space-x-4 mt-6">
         <button
-          onClick={() => router.push(`/dashboard/${subject}/notes`)}
+          onClick={() => router.push(`/dashboard/${routeSubject}/notes`)}
           className="px-6 py-2 rounded-md bg-gray-600 hover:bg-gray-700 transition-colors"
         >
           Cancel

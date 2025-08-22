@@ -1,7 +1,7 @@
 // app/dashboard/[subject]/questions/new/page.tsx
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect } from "react"; // 'use' removed
 import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/AuthContext";
@@ -9,7 +9,6 @@ import { supabase } from "@/lib/supabase";
 import { ALL_GRADES, ALL_UNITS_DISPLAY } from "@/lib/constants";
 import { IndividualQuestionInput } from "@/components/IndividualQuestionInput";
 
-// Dynamically import the BulkQuestionEditor with SSR disabled
 const BulkQuestionEditor = dynamic(
   () =>
     import("@/components/BulkQuestionEditor").then(
@@ -19,22 +18,24 @@ const BulkQuestionEditor = dynamic(
 );
 
 interface Option {
-  key: string; // e.g., 'a', 'b', 'c', 'd'
+  key: string;
   text: string;
 }
 
-// Define the structure of a parsed question for new entries, now with Option[]
 interface ParsedQuestion {
   question_text: string;
-  options: Option[]; // Array of Option objects (key and text)
-  correct_answer: string; // Full text of correct option (e.g., "a. Option Text")
+  options: Option[];
+  correct_answer: string;
 }
 
+// FIX: Access params directly, remove React.use()
 export default function NewQuestionPage({
   params,
 }: {
   params: { subject: string };
 }) {
+  const { subject: routeSubject } = params; // Direct access
+
   const { subject: loggedInSubject, loading } = useAuth();
   const router = useRouter();
 
@@ -48,12 +49,10 @@ export default function NewQuestionPage({
   const [parsedQuestions, setParsedQuestions] = useState<ParsedQuestion[]>([]);
   const [bulkEditorContent, setBulkEditorContent] = useState("");
 
-  const { subject } = params;
-
   if (
     loading ||
     !loggedInSubject ||
-    loggedInSubject.toLowerCase() !== subject.toLowerCase()
+    loggedInSubject.toLowerCase() !== routeSubject.toLowerCase()
   ) {
     return (
       <div className="flex justify-center items-center min-h-screen bg-gray-900">
@@ -62,12 +61,10 @@ export default function NewQuestionPage({
     );
   }
 
-  // IndividualQuestionInput's onQuestionsChange expects ParsedQuestion[] (which has Option[])
   const handleIndividualQuestionsChange = (questions: ParsedQuestion[]) => {
     setParsedQuestions(questions);
   };
 
-  // BulkQuestionEditor's onContentChange expects ParsedQuestion[] (which has Option[])
   const handleBulkEditorChange = (
     questions: ParsedQuestion[],
     rawHtml: string
@@ -92,10 +89,9 @@ export default function NewQuestionPage({
       return;
     }
 
-    // Transform options to string[] for Supabase
     const questionsToInsert = parsedQuestions.map((q) => ({
       question_text: q.question_text,
-      options: q.options.map((opt) => `${opt.key}. ${opt.text}`), // Convert Option[] to string[]
+      options: q.options.map((opt) => `${opt.key}. ${opt.text}`),
       correct_answer: q.correct_answer,
       grade: questionGrade,
       subject: loggedInSubject,
@@ -111,7 +107,7 @@ export default function NewQuestionPage({
       console.error(error);
     } else {
       alert("Questions created successfully!");
-      router.push(`/dashboard/${subject}/questions`);
+      router.push(`/dashboard/${routeSubject}/questions`);
     }
     setIsSaving(false);
   };
@@ -120,7 +116,7 @@ export default function NewQuestionPage({
     <div className="p-8 min-h-screen flex flex-col">
       <div className="flex items-center mb-6">
         <button
-          onClick={() => router.push(`/dashboard/${subject}/questions`)}
+          onClick={() => router.push(`/dashboard/${routeSubject}/questions`)}
           className="mr-4 p-2 rounded-full bg-gray-700 hover:bg-gray-600 transition-colors"
           title="Go back to Questions"
         >
@@ -141,7 +137,7 @@ export default function NewQuestionPage({
           </svg>
         </button>
         <h1 className="text-3xl font-bold text-white">
-          Create New Questions for {subject}
+          Create New Questions for {routeSubject}
         </h1>
       </div>
 
@@ -211,7 +207,7 @@ export default function NewQuestionPage({
 
       <div className="flex justify-end space-x-4 mt-auto">
         <button
-          onClick={() => router.push(`/dashboard/${subject}/questions`)}
+          onClick={() => router.push(`/dashboard/${routeSubject}/questions`)}
           className="px-6 py-2 rounded-md bg-gray-600 hover:bg-gray-700 transition-colors"
         >
           Cancel

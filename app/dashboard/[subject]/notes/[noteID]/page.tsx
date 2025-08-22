@@ -1,7 +1,7 @@
 // app/dashboard/[subject]/notes/[noteID]/page.tsx
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect } from "react"; // 'use' removed
 import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/AuthContext";
@@ -9,18 +9,19 @@ import { supabase } from "@/lib/supabase";
 import { Note } from "@/types/supabase";
 import { ALL_GRADES, ALL_UNITS_DISPLAY } from "@/lib/constants";
 
-// Dynamically import the TiptapEditor component with SSR disabled
 const TiptapEditor = dynamic(
   () => import("@/components/TipTapEditor").then((mod) => mod.TiptapEditor),
   { ssr: false }
 );
 
-// FIX: Directly define the type of 'params' in the function signature
+// FIX: Access params directly, remove React.use()
 export default function NoteEditor({
   params,
 }: {
   params: { subject: string; noteID: string };
 }) {
+  const { subject: routeSubject, noteID } = params; // Direct access
+
   const { subject: loggedInSubject, loading } = useAuth();
   const router = useRouter();
   const [noteTitle, setNoteTitle] = useState("");
@@ -32,7 +33,6 @@ export default function NoteEditor({
   const [pageLoading, setPageLoading] = useState(true);
   const [isClient, setIsClient] = useState(false);
 
-  const { subject, noteID } = params;
   const isNewNote = noteID === "new";
 
   useEffect(() => {
@@ -42,7 +42,7 @@ export default function NoteEditor({
       !isNewNote &&
       !loading &&
       loggedInSubject &&
-      loggedInSubject.toLowerCase() === subject.toLowerCase()
+      loggedInSubject.toLowerCase() === routeSubject.toLowerCase()
     ) {
       const fetchNote = async () => {
         setPageLoading(true);
@@ -55,7 +55,7 @@ export default function NoteEditor({
         if (error || !data) {
           console.error("Error fetching note:", error);
           alert("Note not found or an error occurred.");
-          router.push(`/dashboard/${subject}/notes`);
+          router.push(`/dashboard/${routeSubject}/notes`);
         } else {
           setNoteTitle(data.title || "");
           setNoteContent(data.content || "");
@@ -69,7 +69,7 @@ export default function NoteEditor({
     } else if (isNewNote) {
       setPageLoading(false);
     }
-  }, [noteID, isNewNote, loading, loggedInSubject, subject, router]);
+  }, [noteID, isNewNote, loading, loggedInSubject, routeSubject, router]);
 
   const handleSave = async () => {
     setIsSaving(true);
@@ -95,7 +95,7 @@ export default function NoteEditor({
         console.error(error);
       } else {
         alert("Note created successfully!");
-        router.push(`/dashboard/${subject}/notes`);
+        router.push(`/dashboard/${routeSubject}/notes`);
       }
     } else {
       const { error } = await supabase
@@ -107,7 +107,7 @@ export default function NoteEditor({
         console.error(error);
       } else {
         alert("Note updated successfully!");
-        router.push(`/dashboard/${subject}/notes`);
+        router.push(`/dashboard/${routeSubject}/notes`);
       }
     }
     setIsSaving(false);
@@ -117,7 +117,7 @@ export default function NoteEditor({
     loading ||
     pageLoading ||
     !loggedInSubject ||
-    loggedInSubject.toLowerCase() !== subject.toLowerCase()
+    loggedInSubject.toLowerCase() !== routeSubject.toLowerCase()
   ) {
     return (
       <div className="flex justify-center items-center min-h-screen bg-gray-900">
@@ -132,7 +132,7 @@ export default function NoteEditor({
     <div className="p-8 min-h-screen flex flex-col">
       <div className="flex items-center mb-6">
         <button
-          onClick={() => router.push(`/dashboard/${subject}/notes`)}
+          onClick={() => router.push(`/dashboard/${routeSubject}/notes`)}
           className="mr-4 p-2 rounded-full bg-gray-700 hover:bg-gray-600 transition-colors"
           title="Go back to Notes"
         >
@@ -209,7 +209,7 @@ export default function NoteEditor({
       </div>
       <div className="flex justify-end space-x-4 mt-6">
         <button
-          onClick={() => router.push(`/dashboard/${subject}/notes`)}
+          onClick={() => router.push(`/dashboard/${routeSubject}/notes`)}
           className="px-6 py-2 rounded-md bg-gray-600 hover:bg-gray-700 transition-colors"
         >
           Cancel
