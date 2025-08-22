@@ -1,11 +1,10 @@
 // app/dashboard/[subject]/questions/[questionID]/page.tsx
 "use client";
 
-import { useState, useEffect } from "react"; // 'use' removed
-import { useRouter } from "next/navigation";
+import { useState, useEffect } from "react";
+import { useRouter, useParams } from "next/navigation"; // Import useParams
 import { useAuth } from "@/lib/AuthContext";
 import { supabase } from "@/lib/supabase";
-import { Question } from "@/types/supabase";
 import { ALL_GRADES, ALL_UNITS_DISPLAY } from "@/lib/constants";
 import { IndividualQuestionInput } from "@/components/IndividualQuestionInput";
 
@@ -21,16 +20,17 @@ interface SingleQuestionForInput {
   id?: string;
 }
 
-// FIX: Access params directly, remove React.use()
-export default function EditQuestionPage({
-  params,
-}: {
-  params: { subject: string; questionID: string };
-}) {
-  const { subject: routeSubject, questionID } = params; // Direct access
+// FIX: Remove params from function signature, use useParams hook instead
+export default function EditQuestionPage() {
+  const router = useRouter();
+  const { subject, questionID } = useParams(); // Use useParams hook
+
+  const routeSubject = Array.isArray(subject) ? subject[0] : subject || "";
+  const routeQuestionID = Array.isArray(questionID)
+    ? questionID[0]
+    : questionID || "";
 
   const { subject: loggedInSubject, loading } = useAuth();
-  const router = useRouter();
 
   const [questionGrade, setQuestionGrade] = useState("");
   const [questionUnit, setQuestionUnit] = useState("");
@@ -43,7 +43,7 @@ export default function EditQuestionPage({
 
   useEffect(() => {
     if (
-      questionID !== "new" &&
+      routeQuestionID !== "new" &&
       !loading &&
       loggedInSubject &&
       loggedInSubject.toLowerCase() === routeSubject.toLowerCase()
@@ -53,7 +53,7 @@ export default function EditQuestionPage({
         const { data, error } = await supabase
           .from("questions")
           .select("*")
-          .eq("id", questionID)
+          .eq("id", routeQuestionID)
           .single();
 
         if (error || !data) {
@@ -89,10 +89,10 @@ export default function EditQuestionPage({
         setPageLoading(false);
       };
       fetchQuestion();
-    } else {
-      router.push(`/dashboard/${routeSubject}/questions/new`);
+    } else if (routeQuestionID === "new") {
+      setPageLoading(false);
     }
-  }, [questionID, loading, loggedInSubject, routeSubject, router]);
+  }, [routeQuestionID, loading, loggedInSubject, routeSubject, router]);
 
   const handleIndividualQuestionsChange = (
     questions: SingleQuestionForInput[]
@@ -136,7 +136,7 @@ export default function EditQuestionPage({
     const { error } = await supabase
       .from("questions")
       .update(updatedQuestion)
-      .eq("id", questionID);
+      .eq("id", routeQuestionID);
 
     if (error) {
       alert("Failed to update question.");

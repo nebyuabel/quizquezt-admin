@@ -1,7 +1,7 @@
 // components/BulkQuestionEditor.tsx
 "use client";
 
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect } from "react"; // Removed useCallback if not used, re-added if necessary
 import { useEditor, EditorContent, Editor } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Placeholder from "@tiptap/extension-placeholder";
@@ -81,13 +81,14 @@ d. Venus`,
       lines.forEach((line) => {
         const trimmedLine = line.trim();
         if (!trimmedLine) {
+          // FIX: Explicitly assert type after null check
           if (
             currentQuestion &&
-            currentQuestion.question_text &&
-            currentQuestion.options.length > 0 &&
-            currentQuestion.correct_answer
+            (currentQuestion as ParsedQuestion).question_text &&
+            (currentQuestion as ParsedQuestion).options.length > 0 &&
+            (currentQuestion as ParsedQuestion).correct_answer
           ) {
-            parsedQuestions.push(currentQuestion);
+            parsedQuestions.push(currentQuestion as ParsedQuestion);
             currentQuestion = null;
             expectingOptions = false;
           }
@@ -106,13 +107,14 @@ d. Venus`,
           (separatorMatch && !currentQuestion);
 
         if (startsNewQuestionBlock) {
+          // FIX: Explicitly assert type after null check
           if (
             currentQuestion &&
-            currentQuestion.question_text &&
-            currentQuestion.options.length > 0 &&
-            currentQuestion.correct_answer
+            (currentQuestion as ParsedQuestion).question_text &&
+            (currentQuestion as ParsedQuestion).options.length > 0 &&
+            (currentQuestion as ParsedQuestion).correct_answer
           ) {
-            parsedQuestions.push(currentQuestion);
+            parsedQuestions.push(currentQuestion as ParsedQuestion);
           }
 
           let questionText = trimmedLine;
@@ -140,7 +142,6 @@ d. Venus`,
           const optionMatch = trimmedLine.match(/^([a-zA-Z][\.:]?)\s*(.*)/i);
 
           if (optionMatch) {
-            // FIX: Changed 'let' to 'const' for optionPrefix
             const optionPrefix = optionMatch[1]
               .replace(/[\.:]/g, "")
               .trim()
@@ -151,36 +152,47 @@ d. Venus`,
               optionTextContent.match(/(.*)(\s*<|\s*\*)$/);
             if (correctAnswerMatch) {
               optionTextContent = correctAnswerMatch[1].trim();
-              currentQuestion.correct_answer = `${optionPrefix}. ${optionTextContent}`;
+              // FIX: Explicitly assert type after null check
+              (
+                currentQuestion as ParsedQuestion
+              ).correct_answer = `${optionPrefix}. ${optionTextContent}`;
             }
-
-            currentQuestion.options.push({
+            // FIX: Explicitly assert type after null check
+            (currentQuestion as ParsedQuestion).options.push({
               key: optionPrefix,
               text: optionTextContent,
             });
             expectingOptions = true;
-          } else if (currentQuestion.options.length === 0) {
-            currentQuestion.question_text += `\n${trimmedLine}`;
+          } else if ((currentQuestion as ParsedQuestion).options.length === 0) {
+            // FIX: Explicitly assert type after null check
+            (
+              currentQuestion as ParsedQuestion
+            ).question_text += `\n${trimmedLine}`;
           } else {
-            const lastOption =
-              currentQuestion.options[currentQuestion.options.length - 1];
-            currentQuestion.options[currentQuestion.options.length - 1] = {
-              ...lastOption,
-              text: `${lastOption.text}\n${trimmedLine}`,
-            };
+            const lastOption = (currentQuestion as ParsedQuestion).options[
+              (currentQuestion as ParsedQuestion).options.length - 1
+            ];
+            // FIX: Explicitly assert type after null check
+            (currentQuestion as ParsedQuestion).options[
+              (currentQuestion as ParsedQuestion).options.length - 1
+            ] = { ...lastOption, text: `${lastOption.text}\n${trimmedLine}` };
           }
         } else if (currentQuestion) {
-          currentQuestion.question_text += `\n${trimmedLine}`;
+          // FIX: Explicitly assert type after null check
+          (
+            currentQuestion as ParsedQuestion
+          ).question_text += `\n${trimmedLine}`;
         }
       });
 
+      // FIX: Explicitly assert type after null check for final push
       if (
         currentQuestion &&
-        currentQuestion.question_text &&
-        currentQuestion.options.length > 0 &&
-        currentQuestion.correct_answer
+        (currentQuestion as ParsedQuestion).question_text &&
+        (currentQuestion as ParsedQuestion).options.length > 0 &&
+        (currentQuestion as ParsedQuestion).correct_answer
       ) {
-        parsedQuestions.push(currentQuestion);
+        parsedQuestions.push(currentQuestion as ParsedQuestion);
       }
 
       const finalParsedQuestions = parsedQuestions.filter(
@@ -209,6 +221,7 @@ d. Venus`,
         onContentChange([], "");
       }
     }
+    // FIX: Added editor and onContentChange to dependency array
   }, [editor, initialContent, onContentChange]);
 
   useEffect(() => {

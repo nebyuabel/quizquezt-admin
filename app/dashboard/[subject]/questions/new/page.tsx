@@ -1,9 +1,9 @@
 // app/dashboard/[subject]/questions/new/page.tsx
 "use client";
 
-import { useState, useEffect } from "react"; // 'use' removed
+import { useState, useEffect } from "react";
 import dynamic from "next/dynamic";
-import { useRouter } from "next/navigation";
+import { useRouter, useParams } from "next/navigation"; // Import useParams
 import { useAuth } from "@/lib/AuthContext";
 import { supabase } from "@/lib/supabase";
 import { ALL_GRADES, ALL_UNITS_DISPLAY } from "@/lib/constants";
@@ -28,16 +28,13 @@ interface ParsedQuestion {
   correct_answer: string;
 }
 
-// FIX: Access params directly, remove React.use()
-export default function NewQuestionPage({
-  params,
-}: {
-  params: { subject: string };
-}) {
-  const { subject: routeSubject } = params; // Direct access
+// FIX: Remove params from function signature, use useParams hook instead
+export default function NewQuestionPage() {
+  const router = useRouter();
+  const { subject } = useParams(); // Use useParams hook
+  const routeSubject = Array.isArray(subject) ? subject[0] : subject || "";
 
   const { subject: loggedInSubject, loading } = useAuth();
-  const router = useRouter();
 
   const [questionGrade, setQuestionGrade] = useState("");
   const [questionUnit, setQuestionUnit] = useState("");

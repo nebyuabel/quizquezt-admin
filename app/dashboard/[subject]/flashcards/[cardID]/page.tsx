@@ -2,11 +2,9 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useParams } from "next/navigation"; // Import useParams
 import { useAuth } from "@/lib/AuthContext";
 import { supabase } from "@/lib/supabase";
-// Assuming Flashcard type is correctly imported or defined elsewhere
-// import { Flashcard } from "@/types/supabase";
 import { ALL_GRADES, ALL_UNITS_DISPLAY } from "@/lib/constants";
 import { IndividualFlashcardInput } from "@/components/IndividualFlashcardInput";
 
@@ -16,59 +14,46 @@ interface SingleFlashcardForInput {
   id?: string;
 }
 
-export default function FlashcardPage({
-  params,
-}: {
-  params: { subject: string; cardID: string };
-}) {
-  const { subject: routeSubject, cardID } = params;
-
-  // Renamed `loading` from useAuth to `authLoading` for clarity
-  const { subject: loggedInSubject, loading: authLoading } = useAuth();
+// FIX: Remove params from function signature, use useParams hook instead
+export default function EditFlashcardPage() {
   const router = useRouter();
+  const { subject, cardID } = useParams(); // Use useParams hook
+
+  // Ensure subject and cardID are strings; they come from URL so they should be.
+  const routeSubject = Array.isArray(subject) ? subject[0] : subject || "";
+  const routeCardID = Array.isArray(cardID) ? cardID[0] : cardID || "";
+
+  const { subject: loggedInSubject, loading } = useAuth();
 
   const [flashcardGrade, setFlashcardGrade] = useState("");
   const [flashcardUnit, setFlashcardUnit] = useState("");
   const [isPremium, setIsPremium] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
-  const [pageLoading, setPageLoading] = useState(true); // Manages loading state for page content
+  const [pageLoading, setPageLoading] = useState(true);
 
   const [cardToEdit, setCardToEdit] = useState<SingleFlashcardForInput[]>([]);
 
   useEffect(() => {
-    // 1. If authentication is still loading, wait.
-    if (authLoading) {
-      return;
-    }
-
-    // 2. After authentication loads, check if user is authorized for this subject.
-    // If loggedInSubject is null/undefined or doesn't match routeSubject, redirect.
+    // Only fetch if cardID is valid (not 'new') and auth context is loaded and subjects match
     if (
-      !loggedInSubject ||
-      loggedInSubject.toLowerCase() !== routeSubject.toLowerCase()
+      routeCardID !== "new" &&
+      !loading &&
+      loggedInSubject &&
+      loggedInSubject.toLowerCase() === routeSubject.toLowerCase()
     ) {
-      router.push(`/dashboard/${routeSubject}`); // Redirect to the subject's dashboard
-      return;
-    }
-
-    // 3. Handle fetching an existing flashcard or initializing a new one.
-    if (cardID !== "new") {
-      // Logic for editing an existing flashcard
       const fetchFlashcard = async () => {
-        setPageLoading(true); // Start page-specific loading
+        setPageLoading(true);
         const { data, error } = await supabase
           .from("flashcards")
           .select("*")
-          .eq("id", cardID)
+          .eq("id", routeCardID)
           .single();
 
         if (error || !data) {
           console.error("Error fetching flashcard:", error);
-          // Instead of alert, consider a more user-friendly modal or toast
           alert("Flashcard not found or an error occurred.");
-          router.push(`/dashboard/${routeSubject}/flashcards`); // Redirect if flashcard isn't found
+          router.push(`/dashboard/${routeSubject}/flashcards`);
         } else {
-          // Populate state with fetched data
           setFlashcardGrade(data.grade || "");
           setFlashcardUnit(data.unit || "");
           setIsPremium(data.is_premium || false);
@@ -80,20 +65,14 @@ export default function FlashcardPage({
             },
           ]);
         }
-        setPageLoading(false); // End page-specific loading
+        setPageLoading(false);
       };
       fetchFlashcard();
-    } else {
-      // Logic for creating a new flashcard (cardID is "new")
-      setCardToEdit([
-        {
-          front_text: "",
-          back_text: "",
-        },
-      ]);
-      setPageLoading(false); // New flashcard form is ready
+    } else if (routeCardID === "new") {
+      // If it's a new card page, set loading to false after auth check
+      setPageLoading(false);
     }
-  }, [authLoading, loggedInSubject, routeSubject, cardID, router]); // Dependencies for useEffect
+  }, [routeCardID, loading, loggedInSubject, routeSubject, router]);
 
   const handleIndividualCardsChange = (cards: SingleFlashcardForInput[]) => {
     if (cards.length > 0) {
@@ -111,71 +90,44 @@ export default function FlashcardPage({
       !cardToEdit[0].back_text ||
       !flashcardGrade
     ) {
-      // Consider a more user-friendly modal or toast instead of alert
       alert("Please ensure front text, back text, and grade are not empty.");
       setIsSaving(false);
       return;
     }
 
-    const flashcardData = {
+    const updatedCard = {
       front_text: cardToEdit[0].front_text,
       back_text: cardToEdit[0].back_text,
       grade: flashcardGrade,
-      subject: loggedInSubject, // Use loggedInSubject which is verified
+      subject: loggedInSubject,
       unit: flashcardUnit,
       is_premium: isPremium,
     };
 
-    let error = null;
-
-    if (cardID === "new") {
-      // Create new flashcard
-      const { error: insertError } = await supabase
-        .from("flashcards")
-        .insert([flashcardData]);
-      error = insertError;
-    } else {
-      // Update existing flashcard
-      const { error: updateError } = await supabase
-        .from("flashcards")
-        .update(flashcardData)
-        .eq("id", cardID);
-      error = updateError;
-    }
+    const { error } = await supabase
+      .from("flashcards")
+      .update(updatedCard)
+      .eq("id", routeCardID);
 
     if (error) {
-      alert(`Failed to ${cardID === "new" ? "create" : "update"} flashcard.`);
+      alert("Failed to update flashcard.");
       console.error(error);
     } else {
-      alert(
-        `Flashcard ${cardID === "new" ? "created" : "updated"} successfully!`
-      );
+      alert("Flashcard updated successfully!");
       router.push(`/dashboard/${routeSubject}/flashcards`);
     }
     setIsSaving(false);
   };
 
-  // Display loading state for both authentication and page content
-  if (authLoading || pageLoading) {
-    return (
-      <div className="flex justify-center items-center min-h-screen bg-gray-900">
-        <div className="text-white text-lg">Loading flashcard editor...</div>
-      </div>
-    );
-  }
-
-  // Fallback for unauthorized access or subject mismatch.
-  // This should ideally be caught by the useEffect redirect,
-  // but acts as a safeguard against rendering with invalid data.
   if (
+    loading ||
+    pageLoading ||
     !loggedInSubject ||
     loggedInSubject.toLowerCase() !== routeSubject.toLowerCase()
   ) {
     return (
       <div className="flex justify-center items-center min-h-screen bg-gray-900">
-        <div className="text-white text-lg">
-          Unauthorized access or subject mismatch.
-        </div>
+        <div className="text-white text-lg">Loading flashcard...</div>
       </div>
     );
   }
@@ -204,9 +156,7 @@ export default function FlashcardPage({
             <path d="M19 12H5" />
           </svg>
         </button>
-        <h1 className="text-3xl font-bold text-white">
-          {cardID === "new" ? "Create New Flashcard" : "Edit Flashcard"}
-        </h1>
+        <h1 className="text-3xl font-bold text-white">Edit Flashcard</h1>
       </div>
 
       <div className="grid grid-cols-2 gap-4 mb-4">
@@ -271,11 +221,7 @@ export default function FlashcardPage({
           }
           className="px-6 py-2 rounded-md bg-purple-600 hover:bg-purple-700 transition-colors disabled:bg-gray-500 disabled:cursor-not-allowed"
         >
-          {isSaving
-            ? "Saving..."
-            : cardID === "new"
-            ? "Create Flashcard"
-            : "Save Changes"}
+          {isSaving ? "Saving..." : "Save Changes"}
         </button>
       </div>
     </div>

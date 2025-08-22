@@ -1,10 +1,10 @@
 // app/dashboard/[subject]/flashcards/page.tsx
 "use client";
 
-import { useState, useEffect } from "react"; // 'use' removed
+import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/lib/AuthContext";
-import { useRouter } from "next/navigation";
+import { useRouter, useParams } from "next/navigation"; // Import useParams
 import { Flashcard } from "@/types/supabase";
 import {
   ALL_GRADES,
@@ -13,16 +13,14 @@ import {
 } from "@/lib/constants";
 import { ConfirmationModal } from "@/components/ConfirmationModal";
 
-// FIX: Access params directly, remove React.use()
-export default function FlashcardsPage({
-  params,
-}: {
-  params: { subject: string };
-}) {
-  const { subject: routeSubject } = params; // Direct access
+// FIX: Remove params from function signature, use useParams hook instead
+export default function FlashcardsPage() {
+  // No params in props
+  const router = useRouter();
+  const { subject } = useParams(); // Use useParams hook to get subject
+  const routeSubject = Array.isArray(subject) ? subject[0] : subject || "";
 
   const { subject: loggedInSubject, loading } = useAuth();
-  const router = useRouter();
   const [flashcards, setFlashcards] = useState<Flashcard[]>([]);
   const [dataLoading, setDataLoading] = useState(true);
   const [selectedGrade, setSelectedGrade] = useState<string | null>(null);
@@ -39,7 +37,7 @@ export default function FlashcardsPage({
     let query = supabase
       .from("flashcards")
       .select("*")
-      .ilike("subject", routeSubject);
+      .ilike("subject", routeSubject); // Use routeSubject from useParams
 
     if (selectedGrade) {
       query = query.eq("grade", selectedGrade);

@@ -1,12 +1,11 @@
 // app/dashboard/[subject]/notes/new/page.tsx
 "use client";
 
-import { useState, useEffect } from "react"; // 'use' removed
+import { useState, useEffect } from "react";
 import dynamic from "next/dynamic";
-import { useRouter } from "next/navigation";
+import { useRouter, useParams } from "next/navigation"; // Import useParams
 import { useAuth } from "@/lib/AuthContext";
 import { supabase } from "@/lib/supabase";
-import { Note } from "@/types/supabase";
 import { ALL_GRADES, ALL_UNITS_DISPLAY } from "@/lib/constants";
 
 const TiptapEditor = dynamic(
@@ -14,16 +13,13 @@ const TiptapEditor = dynamic(
   { ssr: false }
 );
 
-// FIX: Access params directly, remove React.use()
-export default function NewNotePage({
-  params,
-}: {
-  params: { subject: string };
-}) {
-  const { subject: routeSubject } = params; // Direct access
+// FIX: Remove params from function signature, use useParams hook instead
+export default function NewNotePage() {
+  const router = useRouter();
+  const { subject } = useParams(); // Use useParams hook
+  const routeSubject = Array.isArray(subject) ? subject[0] : subject || "";
 
   const { subject: loggedInSubject, loading } = useAuth();
-  const router = useRouter();
   const [noteTitle, setNoteTitle] = useState("");
   const [noteContent, setNoteContent] = useState("");
   const [noteGrade, setNoteGrade] = useState("");
