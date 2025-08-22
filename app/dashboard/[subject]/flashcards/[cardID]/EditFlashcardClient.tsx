@@ -1,5 +1,5 @@
+// app/dashboard/[subject]/flashcards/[cardID]/EditFlashcardClient.tsx
 "use client";
-
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/AuthContext";
@@ -22,7 +22,6 @@ export default function EditFlashcardClient({
   const [cardID, setCardID] = useState("");
   const { subject: loggedInSubject, loading } = useAuth();
   const router = useRouter();
-
   const [flashcardGrade, setFlashcardGrade] = useState("");
   const [flashcardUnit, setFlashcardUnit] = useState("");
   const [isPremium, setIsPremium] = useState(false);
@@ -36,7 +35,6 @@ export default function EditFlashcardClient({
       setSubject(fetchedSubject);
       setCardID(fetchedCardID);
     };
-
     fetchParams();
   }, [params]);
 
@@ -73,9 +71,12 @@ export default function EditFlashcardClient({
         }
         setPageLoading(false);
       };
+
       fetchFlashcard();
-    } else {
-      router.push(`/dashboard/${subject}/flashcards/new`);
+    } else if (cardID === "new") {
+      // Initialize with empty card for new flashcards
+      setCardToEdit([{ front_text: "", back_text: "" }]);
+      setPageLoading(false);
     }
   }, [cardID, loading, loggedInSubject, subject, router]);
 
@@ -96,26 +97,49 @@ export default function EditFlashcardClient({
       return;
     }
 
-    const updatedCard = {
-      front_text: cardToEdit[0].front_text,
-      back_text: cardToEdit[0].back_text,
-      grade: flashcardGrade,
-      subject: loggedInSubject,
-      unit: flashcardUnit,
-      is_premium: isPremium,
-    };
+    if (cardID === "new") {
+      // Create new flashcard
+      const newCard = {
+        front_text: cardToEdit[0].front_text,
+        back_text: cardToEdit[0].back_text,
+        grade: flashcardGrade,
+        subject: loggedInSubject,
+        unit: flashcardUnit,
+        is_premium: isPremium,
+      };
 
-    const { error } = await supabase
-      .from("flashcards")
-      .update(updatedCard)
-      .eq("id", cardID);
+      const { error } = await supabase.from("flashcards").insert([newCard]);
 
-    if (error) {
-      alert("Failed to update flashcard.");
-      console.error(error);
+      if (error) {
+        alert("Failed to create flashcard.");
+        console.error(error);
+      } else {
+        alert("Flashcard created successfully!");
+        router.push(`/dashboard/${subject}/flashcards`);
+      }
     } else {
-      alert("Flashcard updated successfully!");
-      router.push(`/dashboard/${subject}/flashcards`);
+      // Update existing flashcard
+      const updatedCard = {
+        front_text: cardToEdit[0].front_text,
+        back_text: cardToEdit[0].back_text,
+        grade: flashcardGrade,
+        subject: loggedInSubject,
+        unit: flashcardUnit,
+        is_premium: isPremium,
+      };
+
+      const { error } = await supabase
+        .from("flashcards")
+        .update(updatedCard)
+        .eq("id", cardID);
+
+      if (error) {
+        alert("Failed to update flashcard.");
+        console.error(error);
+      } else {
+        alert("Flashcard updated successfully!");
+        router.push(`/dashboard/${subject}/flashcards`);
+      }
     }
     setIsSaving(false);
   };
@@ -157,9 +181,10 @@ export default function EditFlashcardClient({
             <path d="M19 12H5" />
           </svg>
         </button>
-        <h1 className="text-3xl font-bold text-white">Edit Flashcard</h1>
+        <h1 className="text-3xl font-bold text-white">
+          {cardID === "new" ? "Create New Flashcard" : "Edit Flashcard"}
+        </h1>
       </div>
-
       <div className="grid grid-cols-2 gap-4 mb-4">
         <select
           value={flashcardGrade}
@@ -187,7 +212,6 @@ export default function EditFlashcardClient({
           ))}
         </select>
       </div>
-
       <label className="flex items-center mb-4">
         <input
           type="checkbox"
@@ -197,14 +221,12 @@ export default function EditFlashcardClient({
         />
         <span className="ml-2 text-white">Premium Content</span>
       </label>
-
       <div className="flex-1 mb-6">
         <IndividualFlashcardInput
           initialCards={cardToEdit}
           onCardsChange={handleIndividualCardsChange}
         />
       </div>
-
       <div className="flex justify-end space-x-4 mt-auto">
         <button
           onClick={() => router.push(`/dashboard/${subject}/flashcards`)}
@@ -223,7 +245,11 @@ export default function EditFlashcardClient({
           }
           className="px-6 py-2 rounded-md bg-purple-600 hover:bg-purple-700 transition-colors disabled:bg-gray-500 disabled:cursor-not-allowed"
         >
-          {isSaving ? "Saving..." : "Save Changes"}
+          {isSaving
+            ? "Saving..."
+            : cardID === "new"
+            ? "Create Flashcard"
+            : "Save Changes"}
         </button>
       </div>
     </div>
