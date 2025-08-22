@@ -16,7 +16,7 @@ interface SingleFlashcardForInput {
 export default function EditFlashcardClient({
   params,
 }: {
-  params: () => Promise<{ subject: string; cardID: string }>;
+  params: Promise<{ subject: string; cardID: string }>;
 }) {
   const [subject, setSubject] = useState("");
   const [cardID, setCardID] = useState("");
@@ -32,7 +32,7 @@ export default function EditFlashcardClient({
 
   useEffect(() => {
     const fetchParams = async () => {
-      const { subject: fetchedSubject, cardID: fetchedCardID } = await params();
+      const { subject: fetchedSubject, cardID: fetchedCardID } = await params;
       setSubject(fetchedSubject);
       setCardID(fetchedCardID);
     };
