@@ -6,7 +6,16 @@ export const ALL_UNITS_DISPLAY = Array.from(
   { length: 9 },
   (_, i) => `Unit ${i + 1}`
 ); // "Unit 1" to "Unit 9"
-
+export const ALL_SUBJECTS = [
+  "Math",
+  "Physics",
+  "Chemistry",
+  "Biology",
+  "History",
+  "Geography",
+  "Literature",
+  "SAT",
+];
 // Helper function to generate flexible unit filter string for Supabase 'or' query
 export const generateUnitFilter = (unitValue: string): string => {
   if (!unitValue) return ""; // No filter if unitValue is empty
