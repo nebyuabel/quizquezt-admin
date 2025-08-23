@@ -3,11 +3,11 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { useAuth } from "@/lib/AuthContext";
+import { useAuth } from "@/lib/AuthContext"; // Ensure this is AuthProvider if you renamed it
 import { ALL_SUBJECTS } from "@/lib/constants"; // Import ALL_SUBJECTS
 
 export default function LoginPage() {
-  const { subject, loading, login } = useAuth();
+  const { subject, loading, login } = useAuth(); // Use useAuth as per your context
   const router = useRouter();
   const [selectedSubject, setSelectedSubject] = useState("");
   const [password, setPassword] = useState("");
@@ -21,7 +21,8 @@ export default function LoginPage() {
     }
   }, [subject, router]);
 
-  const handleLogin = async (e: React.FormEvent) => {
+  const handleLogin = (e: React.FormEvent) => {
+    // Removed 'async' keyword as login is synchronous
     e.preventDefault();
     setLoginLoading(true);
     setError(null);
@@ -32,7 +33,7 @@ export default function LoginPage() {
       return;
     }
 
-    const result = login(selectedSubject, password); // Call the sync login function
+    const result = login(selectedSubject, password); // FIX: Removed 'await' as login is synchronous
 
     if (result.success) {
       // The useEffect above will handle the redirect once 'subject' state updates in AuthContext

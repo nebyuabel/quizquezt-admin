@@ -8,7 +8,7 @@ import {
   useEffect,
   ReactNode,
 } from "react";
-import { ALL_SUBJECTS } from "./constants"; // Import ALL_SUBJECTS for consistency
+import { ALL_SUBJECTS } from "./constants"; // FIX: Added missing import for ALL_SUBJECTS
 
 interface AuthContextType {
   subject: string | null;
@@ -42,8 +42,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     // Check local storage for an existing session
     const storedSubject = localStorage.getItem("admin-subject");
+    // Validate stored subject against ALL_SUBJECTS to prevent invalid redirects
     if (storedSubject && ALL_SUBJECTS.includes(storedSubject)) {
-      // Validate stored subject against ALL_SUBJECTS
       setSubject(storedSubject);
     }
     setLoading(false);
