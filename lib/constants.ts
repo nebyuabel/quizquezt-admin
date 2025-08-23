@@ -15,6 +15,7 @@ export const ALL_SUBJECTS = [
   "Geography",
   "Literature",
   "SAT",
+  "Economics",
 ];
 // Helper function to generate flexible unit filter string for Supabase 'or' query
 export const generateUnitFilter = (unitValue: string): string => {

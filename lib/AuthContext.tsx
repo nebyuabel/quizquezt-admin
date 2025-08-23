@@ -37,6 +37,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     Geography: process.env.NEXT_PUBLIC_GEOGRAPHY_PASSWORD || "",
     Literature: process.env.NEXT_PUBLIC_LITERATURE_PASSWORD || "",
     SAT: process.env.NEXT_PUBLIC_SAT_PASSWORD || "",
+    Economics: process.env.NEXT_PUBLIC_ECONOMICS_PASSWORD || "",
   };
 
   useEffect(() => {
