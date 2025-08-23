@@ -1,10 +1,10 @@
 // app/dashboard/[subject]/questions/page.tsx
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react"; // Import useCallback
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/lib/AuthContext";
-import { useRouter, useParams } from "next/navigation"; // Import useParams
+import { useRouter, useParams } from "next/navigation";
 import { Question } from "@/types/supabase";
 import {
   ALL_GRADES,
@@ -13,10 +13,9 @@ import {
 } from "@/lib/constants";
 import { ConfirmationModal } from "@/components/ConfirmationModal";
 
-// FIX: Remove params from function signature, use useParams hook instead
 export default function QuestionsPage() {
   const router = useRouter();
-  const { subject } = useParams(); // Use useParams hook
+  const { subject } = useParams();
   const routeSubject = Array.isArray(subject) ? subject[0] : subject || "";
 
   const { subject: loggedInSubject, loading } = useAuth();
@@ -29,7 +28,8 @@ export default function QuestionsPage() {
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [questionToDelete, setQuestionToDelete] = useState<string | null>(null);
 
-  const fetchQuestions = async () => {
+  // FIX: Wrap fetchQuestions in useCallback
+  const fetchQuestions = useCallback(async () => {
     setDataLoading(true);
 
     let query = supabase
@@ -54,18 +54,13 @@ export default function QuestionsPage() {
       .order("unit", { ascending: true })
       .order("created_at", { ascending: false });
 
-    console.log("Supabase Query Response (actual data received):", {
-      data,
-      error,
-    });
-
     if (error) {
       console.error("Error fetching questions:", error);
     } else {
       setQuestions(data || []);
     }
     setDataLoading(false);
-  };
+  }, [routeSubject, selectedGrade, selectedUnit, searchQuery]); // Dependencies for useCallback
 
   useEffect(() => {
     if (
@@ -75,14 +70,7 @@ export default function QuestionsPage() {
     ) {
       fetchQuestions();
     }
-  }, [
-    loading,
-    loggedInSubject,
-    routeSubject,
-    selectedGrade,
-    selectedUnit,
-    searchQuery,
-  ]);
+  }, [loading, loggedInSubject, routeSubject, fetchQuestions]); // fetchQuestions is now stable
 
   if (
     loading ||

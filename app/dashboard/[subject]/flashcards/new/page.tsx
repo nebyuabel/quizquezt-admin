@@ -1,9 +1,9 @@
 // app/dashboard/[subject]/flashcards/new/page.tsx
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react"; // Removed useEffect if not used
 import dynamic from "next/dynamic";
-import { useRouter, useParams } from "next/navigation"; // Import useParams
+import { useRouter, useParams } from "next/navigation";
 import { useAuth } from "@/lib/AuthContext";
 import { supabase } from "@/lib/supabase";
 import { ALL_GRADES, ALL_UNITS_DISPLAY } from "@/lib/constants";
@@ -23,10 +23,9 @@ interface ParsedFlashcard {
   back_text: string;
 }
 
-// FIX: Remove params from function signature, use useParams hook instead
 export default function NewFlashcardPage() {
   const router = useRouter();
-  const { subject } = useParams(); // Use useParams hook
+  const { subject } = useParams();
   const routeSubject = Array.isArray(subject) ? subject[0] : subject || "";
 
   const { subject: loggedInSubject, loading } = useAuth();

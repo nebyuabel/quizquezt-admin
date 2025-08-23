@@ -1,10 +1,10 @@
 // app/dashboard/[subject]/flashcards/page.tsx
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react"; // Import useCallback
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/lib/AuthContext";
-import { useRouter, useParams } from "next/navigation"; // Import useParams
+import { useRouter, useParams } from "next/navigation";
 import { Flashcard } from "@/types/supabase";
 import {
   ALL_GRADES,
@@ -13,11 +13,9 @@ import {
 } from "@/lib/constants";
 import { ConfirmationModal } from "@/components/ConfirmationModal";
 
-// FIX: Remove params from function signature, use useParams hook instead
 export default function FlashcardsPage() {
-  // No params in props
   const router = useRouter();
-  const { subject } = useParams(); // Use useParams hook to get subject
+  const { subject } = useParams();
   const routeSubject = Array.isArray(subject) ? subject[0] : subject || "";
 
   const { subject: loggedInSubject, loading } = useAuth();
@@ -32,12 +30,13 @@ export default function FlashcardsPage() {
     null
   );
 
-  const fetchFlashcards = async () => {
+  // FIX: Wrap fetchFlashcards in useCallback
+  const fetchFlashcards = useCallback(async () => {
     setDataLoading(true);
     let query = supabase
       .from("flashcards")
       .select("*")
-      .ilike("subject", routeSubject); // Use routeSubject from useParams
+      .ilike("subject", routeSubject);
 
     if (selectedGrade) {
       query = query.eq("grade", selectedGrade);
@@ -64,7 +63,7 @@ export default function FlashcardsPage() {
       setFlashcards(data || []);
     }
     setDataLoading(false);
-  };
+  }, [routeSubject, selectedGrade, selectedUnit, searchQuery]); // Dependencies for useCallback
 
   useEffect(() => {
     if (
@@ -74,14 +73,7 @@ export default function FlashcardsPage() {
     ) {
       fetchFlashcards();
     }
-  }, [
-    loading,
-    loggedInSubject,
-    routeSubject,
-    selectedGrade,
-    selectedUnit,
-    searchQuery,
-  ]);
+  }, [loading, loggedInSubject, routeSubject, fetchFlashcards]); // fetchFlashcards is now stable
 
   if (
     loading ||

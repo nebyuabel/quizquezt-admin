@@ -1,10 +1,10 @@
 // app/dashboard/[subject]/notes/page.tsx
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react"; // Import useCallback
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/lib/AuthContext";
-import { useRouter, useParams } from "next/navigation"; // Import useParams
+import { useRouter, useParams } from "next/navigation";
 import { Note } from "@/types/supabase";
 import {
   ALL_GRADES,
@@ -13,10 +13,9 @@ import {
 } from "@/lib/constants";
 import { ConfirmationModal } from "@/components/ConfirmationModal";
 
-// FIX: Remove params from function signature, use useParams hook instead
 export default function NotesPage() {
   const router = useRouter();
-  const { subject } = useParams(); // Use useParams hook
+  const { subject } = useParams();
   const routeSubject = Array.isArray(subject) ? subject[0] : subject || "";
 
   const { subject: loggedInSubject, loading } = useAuth();
@@ -29,7 +28,8 @@ export default function NotesPage() {
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [noteToDelete, setNoteToDelete] = useState<string | null>(null);
 
-  const fetchNotes = async () => {
+  // FIX: Wrap fetchNotes in useCallback
+  const fetchNotes = useCallback(async () => {
     setDataLoading(true);
     let query = supabase
       .from("notes")
@@ -59,7 +59,7 @@ export default function NotesPage() {
       setNotes(data || []);
     }
     setDataLoading(false);
-  };
+  }, [routeSubject, selectedGrade, selectedUnit, searchQuery]); // Dependencies for useCallback
 
   useEffect(() => {
     if (
@@ -69,14 +69,7 @@ export default function NotesPage() {
     ) {
       fetchNotes();
     }
-  }, [
-    loading,
-    loggedInSubject,
-    routeSubject,
-    selectedGrade,
-    selectedUnit,
-    searchQuery,
-  ]);
+  }, [loading, loggedInSubject, routeSubject, fetchNotes]); // fetchNotes is now stable
 
   if (
     loading ||

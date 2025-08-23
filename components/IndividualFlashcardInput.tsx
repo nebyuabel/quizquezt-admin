@@ -4,7 +4,6 @@
 import React, { useState, useEffect } from "react";
 import { MinusCircle, PlusCircle } from "lucide-react";
 
-// SingleFlashcard type for this component, does NOT include is_premium
 interface SingleFlashcard {
   front_text: string;
   back_text: string;
@@ -13,7 +12,7 @@ interface SingleFlashcard {
 
 interface IndividualFlashcardInputProps {
   initialCards?: SingleFlashcard[];
-  onCardsChange: (cards: SingleFlashcard[]) => void; // Expects array of SingleFlashcard
+  onCardsChange: (cards: SingleFlashcard[]) => void;
 }
 
 export const IndividualFlashcardInput: React.FC<
@@ -33,7 +32,7 @@ export const IndividualFlashcardInput: React.FC<
     ) {
       setCards(initialCards);
     }
-  }, [initialCards]);
+  }, [initialCards, cards]); // FIX: Added 'cards' to dependency array
 
   useEffect(() => {
     if (!isInitialMount.current) {

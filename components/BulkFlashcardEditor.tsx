@@ -1,7 +1,7 @@
 // components/BulkFlashcardEditor.tsx
 "use client";
 
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useEffect } from "react"; // Removed useState, useCallback if not used
 import { useEditor, EditorContent, Editor } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Placeholder from "@tiptap/extension-placeholder";
@@ -13,7 +13,6 @@ import { FlashcardSeparatorExtension } from "@/lib/tiptap-extensions/FlashcardSe
 
 type EditorWithCount = Editor & { getCharacterCount?: () => number };
 
-// ParsedFlashcard type for this component, does NOT include is_premium
 interface ParsedFlashcard {
   front_text: string;
   back_text: string;
@@ -21,7 +20,7 @@ interface ParsedFlashcard {
 
 interface BulkFlashcardEditorProps {
   initialContent: string;
-  onContentChange: (parsedCards: ParsedFlashcard[], rawHtml: string) => void; // Expects array of ParsedFlashcard
+  onContentChange: (parsedCards: ParsedFlashcard[], rawHtml: string) => void;
 }
 
 export const BulkFlashcardEditor: React.FC<BulkFlashcardEditorProps> = ({
@@ -58,7 +57,7 @@ export const BulkFlashcardEditor: React.FC<BulkFlashcardEditorProps> = ({
           const splitIndex =
             separatorIndex !== -1 ? separatorIndex : altSeparatorIndex;
           const front_text = trimmedLine.substring(0, splitIndex).trim();
-          const back_text = trimmedLine.substring(splitIndex + 3).trim(); // +3 for ' >>' or ' ::'
+          const back_text = trimmedLine.substring(splitIndex + 3).trim();
 
           if (front_text && back_text) {
             parsedCards.push({ front_text, back_text });
@@ -87,7 +86,7 @@ export const BulkFlashcardEditor: React.FC<BulkFlashcardEditorProps> = ({
         onContentChange([], "");
       }
     }
-  }, [editor, initialContent, onContentChange]);
+  }, [editor, initialContent, onContentChange]); // FIX: Added editor and onContentChange
 
   return (
     <div className="border border-gray-600 rounded-md overflow-hidden bg-gray-800 text-white">

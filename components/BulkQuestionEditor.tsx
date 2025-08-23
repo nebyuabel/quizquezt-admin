@@ -1,7 +1,7 @@
 // components/BulkQuestionEditor.tsx
 "use client";
 
-import React, { useState, useEffect } from "react"; // Removed useCallback if not used, re-added if necessary
+import React, { useEffect } from "react"; // Removed useCallback if not used, re-added if necessary
 import { useEditor, EditorContent, Editor } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Placeholder from "@tiptap/extension-placeholder";
