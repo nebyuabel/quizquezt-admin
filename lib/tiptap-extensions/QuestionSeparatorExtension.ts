@@ -39,45 +39,28 @@ export const QuestionSeparatorExtension = Extension.create({
       new InputRule({
         find: /(>>|::)/,
         handler: ({ state, range }) => {
-          // FIX: Removed unused 'commands'
           const { tr } = state;
           const start = range.from;
           const end = range.to;
 
           tr.insertText(" ↓", start, end);
-
-          // Note: If commands are truly needed here, they must be used.
-          // Since the warning was 'defined but never used', removing it is the fix.
-          // If functionality breaks, re-add 'commands' and explicitly use it.
-          // commands.setTextSelection(start + 2);
-          // commands.splitBlock();
-          // commands.insertContent('');
-          // commands.scrollIntoView();
-
           return;
         },
       }),
       new InputRule({
         find: /\/n$/,
         handler: ({ state, range }) => {
-          // FIX: Removed unused 'commands'
           const { tr } = state;
-          const start = range.from;
+          const start = range.from; // FIX: Corrected typo 'const const' to 'const'
           const end = range.to;
 
           tr.deleteRange(start, end);
-
-          // If commands are truly needed, re-add them.
-          // commands.splitBlock();
-          // commands.insertContent('');
-          // commands.scrollIntoView();
           return;
         },
       }),
       new InputRule({
         find: /(\s*<|\s*\*)$/,
         handler: ({ state, range }) => {
-          // FIX: Removed unused 'commands'
           const { tr } = state;
           const start = range.from;
           const end = range.to;
