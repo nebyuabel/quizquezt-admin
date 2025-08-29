@@ -1,19 +1,18 @@
 // components/BulkFlashcardEditor.tsx
 "use client";
 
-import React, { useEffect } from "react"; // Removed useState, useCallback if not used
+import React, { useEffect } from "react";
 import { useEditor, EditorContent, Editor } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Placeholder from "@tiptap/extension-placeholder";
 import CharacterCount from "@tiptap/extension-character-count";
 import { EditorToolbar } from "./EditorToolBar";
 import { MAX_NOTE_LENGTH } from "@/lib/constants";
-
 import { FlashcardSeparatorExtension } from "@/lib/tiptap-extensions/FlashcardSeparatorExtension";
 
 type EditorWithCount = Editor & { getCharacterCount?: () => number };
 
-interface ParsedFlashcard {
+export interface ParsedFlashcard {
   front_text: string;
   back_text: string;
 }
@@ -31,11 +30,18 @@ export const BulkFlashcardEditor: React.FC<BulkFlashcardEditorProps> = ({
     extensions: [
       StarterKit,
       Placeholder.configure({
-        placeholder: `Enter flashcards here. Use ">>" or "::" to separate front from back.\n\nExample:\nFront text of card 1 >> Back text of card 1\nFront text of card 2 :: Back text of card 2`,
+        placeholder: `Enter flashcards here.
+
+Formats:
+Front >> Back
+Front :: Back
+(When you type >> or :: it turns into " ↓ " and jumps to a new line.)
+
+You can separate cards with a line containing just:
+---
+`,
       }),
-      CharacterCount.configure({
-        limit: MAX_NOTE_LENGTH * 5,
-      }),
+      CharacterCount.configure({ limit: MAX_NOTE_LENGTH * 5 }),
       FlashcardSeparatorExtension,
     ],
     content: initialContent,
@@ -43,28 +49,93 @@ export const BulkFlashcardEditor: React.FC<BulkFlashcardEditorProps> = ({
       const rawHtml = editor.getHTML();
       const textContent = editor.getText();
 
-      const lines = textContent.split("\n");
-      const parsedCards: ParsedFlashcard[] = [];
+      const lines = textContent.replace(/\r\n?/g, "\n").split("\n");
 
-      lines.forEach((line) => {
-        const trimmedLine = line.trim();
-        if (!trimmedLine) return;
+      const cards: ParsedFlashcard[] = [];
 
-        const separatorIndex = trimmedLine.indexOf(" >>");
-        const altSeparatorIndex = trimmedLine.indexOf(" ::");
+      let currentFront: string | null = null;
+      let currentBack: string[] = [];
 
-        if (separatorIndex !== -1 || altSeparatorIndex !== -1) {
-          const splitIndex =
-            separatorIndex !== -1 ? separatorIndex : altSeparatorIndex;
-          const front_text = trimmedLine.substring(0, splitIndex).trim();
-          const back_text = trimmedLine.substring(splitIndex + 3).trim();
-
-          if (front_text && back_text) {
-            parsedCards.push({ front_text, back_text });
+      const flushIfValid = () => {
+        if (currentFront && currentFront.trim() && currentBack.length > 0) {
+          const back = currentBack.join("\n").trim();
+          if (back) {
+            cards.push({
+              front_text: currentFront.trim(),
+              back_text: back,
+            });
           }
         }
-      });
-      onContentChange(parsedCards, rawHtml);
+        currentFront = null;
+        currentBack = [];
+      };
+
+      for (const rawLine of lines) {
+        const line = rawLine.replace(/\s+$/g, "");
+
+        if (line.trim() === "") continue;
+
+        // Card separator
+        if (line.trim() === "---") {
+          flushIfValid();
+          continue;
+        }
+
+        // Single-line separators " >>" / " ::" (space optional)
+        // and the converted "↓" marker (placed by input rule)
+        const arrowIdx = line.indexOf(">>");
+        const colonIdx = line.indexOf("::");
+        const downIdx = line.indexOf("↓"); // our inserted symbol
+
+        const hasInlineSplit =
+          arrowIdx !== -1 || colonIdx !== -1 || downIdx !== -1;
+
+        if (hasInlineSplit) {
+          // New card starts; flush previous
+          flushIfValid();
+
+          let idx = -1;
+          let sepLen = 2;
+
+          if (downIdx !== -1) {
+            idx = downIdx;
+            // could be surrounded by spaces, trim them out from both sides later
+            sepLen = 1;
+          } else if (arrowIdx !== -1) {
+            idx = arrowIdx;
+            sepLen = 2;
+          } else if (colonIdx !== -1) {
+            idx = colonIdx;
+            sepLen = 2;
+          }
+
+          const front = line.slice(0, idx).trim();
+          // +sepLen plus potential trailing space
+          const after = line.slice(idx + sepLen).replace(/^\s+/, "");
+
+          currentFront = front;
+          // If the input rule split to the next line, back content
+          // will come from subsequent lines; but if user kept same line,
+          // we capture the rest as the beginning of back.
+          currentBack = after ? [after] : [];
+          continue;
+        }
+
+        // If we already have a front, keep adding to back until separator
+        if (currentFront) {
+          currentBack.push(line);
+          continue;
+        }
+
+        // If none matched, treat this line as a single-line card with no explicit sep
+        // (we won't create a card until we see a separator)
+        // To keep behavior strict & predictable, ignore orphan lines.
+      }
+
+      // final flush
+      flushIfValid();
+
+      onContentChange(cards, rawHtml);
     },
     editorProps: {
       attributes: {
@@ -86,10 +157,10 @@ export const BulkFlashcardEditor: React.FC<BulkFlashcardEditorProps> = ({
         onContentChange([], "");
       }
     }
-  }, [editor, initialContent, onContentChange]); // FIX: Added editor and onContentChange
+  }, [editor, initialContent, onContentChange]);
 
   return (
-    <div className="border border-gray-600 rounded-md overflow-hidden bg-gray-800 text-white">
+    <div className="border border-gray-600 rounded-md overflow-hidden bg-gray-900 text-gray-100">
       <EditorToolbar editor={editor} />
       <EditorContent editor={editor} className="p-4 min-h-[400px]" />
       <div className="flex justify-end p-2 text-gray-400 text-sm">

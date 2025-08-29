@@ -1,9 +1,7 @@
 // lib/tiptap-extensions/QuestionSeparatorExtension.ts
-
-import { Extension, Mark } from "@tiptap/core";
+import { Extension, Mark, InputRule } from "@tiptap/core";
 import { Text } from "@tiptap/extension-text";
 import { Paragraph } from "@tiptap/extension-paragraph";
-import { InputRule } from "@tiptap/core";
 
 export const CorrectAnswerMark = Mark.create({
   name: "correctAnswer",
@@ -12,8 +10,8 @@ export const CorrectAnswerMark = Mark.create({
     return [
       {
         tag: "span",
-        getAttrs: (node: HTMLElement) =>
-          node.classList.contains("correct-answer-indicator") ? {} : false,
+        getAttrs: (el: HTMLElement) =>
+          el.classList.contains("correct-answer-indicator") ? {} : false,
       },
     ];
   },
@@ -36,47 +34,41 @@ export const QuestionSeparatorExtension = Extension.create({
 
   addInputRules() {
     return [
+      // If someone types ">>" / "::" in questions, just insert the "↓" symbol (no split)
       new InputRule({
-        find: /(>>|::)/,
+        find: /(>>|::)$/,
         handler: ({ state, range }) => {
           const { tr } = state;
-          const start = range.from;
-          const end = range.to;
-
-          tr.insertText(" ↓", start, end);
-          return;
+          tr.insertText(" ↓", range.from, range.to);
         },
       }),
+
+      // Remove a literal "/n" if pasted from instructions
       new InputRule({
         find: /\/n$/,
         handler: ({ state, range }) => {
           const { tr } = state;
-          const start = range.from; // FIX: Corrected typo 'const const' to 'const'
-          const end = range.to;
-
-          tr.deleteRange(start, end);
-          return;
+          tr.deleteRange(range.from, range.to);
         },
       }),
+
+      // Turn a trailing "<" into a visual mark on the option line
       new InputRule({
-        find: /(\s*<|\s*\*)$/,
+        find: /\s*<$/,
         handler: ({ state, range }) => {
           const { tr } = state;
           const start = range.from;
           const end = range.to;
 
+          // remove the "<"
           tr.deleteRange(start, end);
 
-          const $start = tr.doc.resolve(start);
-          const paragraphStart = $start.start();
-          const paragraphEnd = $start.end();
+          // mark the entire current paragraph as the "correct answer"
+          const $pos = tr.doc.resolve(start);
+          const pStart = $pos.start();
+          const pEnd = $pos.end();
 
-          tr.addMark(
-            paragraphStart,
-            paragraphEnd,
-            state.schema.marks.correctAnswer.create()
-          );
-          return;
+          tr.addMark(pStart, pEnd, state.schema.marks.correctAnswer.create());
         },
       }),
     ];

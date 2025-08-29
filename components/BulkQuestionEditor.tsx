@@ -1,7 +1,7 @@
 // components/BulkQuestionEditor.tsx
 "use client";
 
-import React, { useEffect } from "react"; // Removed useCallback if not used, re-added if necessary
+import React, { useEffect } from "react";
 import { useEditor, EditorContent, Editor } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Placeholder from "@tiptap/extension-placeholder";
@@ -17,15 +17,14 @@ import {
 type EditorWithCount = Editor & { getCharacterCount?: () => number };
 
 interface Option {
-  // Define Option here as well for local use
   key: string;
   text: string;
 }
 
-interface ParsedQuestion {
+export interface ParsedQuestion {
   question_text: string;
-  options: Option[]; // Expects array of Option objects
-  correct_answer: string; // Full text of correct option (e.g., "a. Option Text")
+  options: Option[];
+  correct_answer: string; // "a. Option text"
 }
 
 interface BulkQuestionEditorProps {
@@ -41,30 +40,28 @@ export const BulkQuestionEditor: React.FC<BulkQuestionEditorProps> = ({
     extensions: [
       StarterKit,
       Placeholder.configure({
-        placeholder: `Paste your questions here directly from Gemini or type them.
-Each question block should start on a new line.
+        placeholder: `Paste or type MCQs here.
 
-Use ">>" or "::" to separate the question from its options. This will turn into " ↓" and move to a new line.
+Format:
+Q: Your question text
+a. first option
+b. second option <
+c. third option
+d. fourth option
+---
+Q: Next question...
+a. ...
+b. ... <
+c. ...
+d. ...
 
-Type options starting with "a.", "b.", etc., on new lines.
-Mark the correct answer with "<" or "*" at the end of its line. This will remove the marker and apply a faint style.
-
-Example:
-/n What is the capital of France? >>
-a. London
-b. Berlin
-c. Paris <
-d. Rome
-
-2. Which planet is known as the Red Planet? ::
-a. Earth
-b. Mars *
-c. Jupiter
-d. Venus`,
+Tips:
+• Use "<" at the END of the correct option line.
+• Use "---" on a line by itself to separate questions.
+• You can also start questions with "Question:" or "1." instead of "Q:".
+`,
       }),
-      CharacterCount.configure({
-        limit: MAX_NOTE_LENGTH * 5,
-      }),
+      CharacterCount.configure({ limit: MAX_NOTE_LENGTH * 5 }),
       QuestionSeparatorExtension,
       CorrectAnswerMark,
     ],
@@ -73,133 +70,97 @@ d. Venus`,
       const rawHtml = editor.getHTML();
       const textContent = editor.getText();
 
-      const lines = textContent.split("\n");
+      // Normalize newlines and trim trailing spaces
+      const lines = textContent
+        .replace(/\r\n?/g, "\n")
+        .split("\n")
+        .map((l) => l.replace(/\s+$/g, ""));
+
       const parsedQuestions: ParsedQuestion[] = [];
-      let currentQuestion: ParsedQuestion | null = null;
+
+      let current: ParsedQuestion | null = null;
       let expectingOptions = false;
 
-      lines.forEach((line) => {
-        const trimmedLine = line.trim();
-        if (!trimmedLine) {
-          // FIX: Explicitly assert type after null check
-          if (
-            currentQuestion &&
-            (currentQuestion as ParsedQuestion).question_text &&
-            (currentQuestion as ParsedQuestion).options.length > 0 &&
-            (currentQuestion as ParsedQuestion).correct_answer
-          ) {
-            parsedQuestions.push(currentQuestion as ParsedQuestion);
-            currentQuestion = null;
-            expectingOptions = false;
-          }
-          return;
+      const flushIfValid = () => {
+        if (
+          current &&
+          current.question_text.trim().length > 0 &&
+          current.options.length > 0 &&
+          current.correct_answer.trim().length > 0
+        ) {
+          parsedQuestions.push(current);
+        }
+        current = null;
+        expectingOptions = false;
+      };
+
+      for (const rawLine of lines) {
+        const line = rawLine.trim();
+
+        if (line === "") continue;
+
+        // Block separator
+        if (line === "---") {
+          flushIfValid();
+          continue;
         }
 
-        const separatorMatch = trimmedLine.match(/(.*)\s↓$/);
-        const isNewQuestionMarker = trimmedLine.match(/^\/(?:n|N)\s*(.*)/);
-        const questionPrefixMatch = trimmedLine.match(
-          /^(Question:|\d+\.)\s*(.*)/i
-        );
-
-        const startsNewQuestionBlock =
-          isNewQuestionMarker ||
-          (questionPrefixMatch && !expectingOptions) ||
-          (separatorMatch && !currentQuestion);
-
-        if (startsNewQuestionBlock) {
-          // FIX: Explicitly assert type after null check
-          if (
-            currentQuestion &&
-            (currentQuestion as ParsedQuestion).question_text &&
-            (currentQuestion as ParsedQuestion).options.length > 0 &&
-            (currentQuestion as ParsedQuestion).correct_answer
-          ) {
-            parsedQuestions.push(currentQuestion as ParsedQuestion);
-          }
-
-          let questionText = trimmedLine;
-          if (isNewQuestionMarker) {
-            questionText = isNewQuestionMarker[1].trim();
-          } else if (questionPrefixMatch) {
-            questionText = questionPrefixMatch[2].trim();
-          } else if (separatorMatch) {
-            questionText = separatorMatch[1].trim();
-          }
-          questionText = questionText
-            .replace(/^(Question:|\d+\.)\s*/i, "")
-            .trim();
-
-          currentQuestion = {
-            question_text: questionText,
+        // New question detectors
+        const qMatch = line.match(/^(Q:|Question:|\d+\.)\s*(.*)$/i);
+        if (qMatch) {
+          // if an unfinished question existed, push only if valid
+          flushIfValid();
+          current = {
+            question_text: (qMatch[2] || "").trim(),
             options: [],
             correct_answer: "",
           };
-          expectingOptions = !!separatorMatch;
-        } else if (
-          currentQuestion &&
-          (expectingOptions || trimmedLine.match(/^([a-zA-Z][\.:]?)\s*(.*)/i))
-        ) {
-          const optionMatch = trimmedLine.match(/^([a-zA-Z][\.:]?)\s*(.*)/i);
-
-          if (optionMatch) {
-            const optionPrefix = optionMatch[1]
-              .replace(/[\.:]/g, "")
-              .trim()
-              .toLowerCase();
-            let optionTextContent = optionMatch[2].trim();
-
-            const correctAnswerMatch =
-              optionTextContent.match(/(.*)(\s*<|\s*\*)$/);
-            if (correctAnswerMatch) {
-              optionTextContent = correctAnswerMatch[1].trim();
-              // FIX: Explicitly assert type after null check
-              (
-                currentQuestion as ParsedQuestion
-              ).correct_answer = `${optionPrefix}. ${optionTextContent}`;
-            }
-            // FIX: Explicitly assert type after null check
-            (currentQuestion as ParsedQuestion).options.push({
-              key: optionPrefix,
-              text: optionTextContent,
-            });
-            expectingOptions = true;
-          } else if ((currentQuestion as ParsedQuestion).options.length === 0) {
-            // FIX: Explicitly assert type after null check
-            (
-              currentQuestion as ParsedQuestion
-            ).question_text += `\n${trimmedLine}`;
-          } else {
-            const lastOption = (currentQuestion as ParsedQuestion).options[
-              (currentQuestion as ParsedQuestion).options.length - 1
-            ];
-            // FIX: Explicitly assert type after null check
-            (currentQuestion as ParsedQuestion).options[
-              (currentQuestion as ParsedQuestion).options.length - 1
-            ] = { ...lastOption, text: `${lastOption.text}\n${trimmedLine}` };
-          }
-        } else if (currentQuestion) {
-          // FIX: Explicitly assert type after null check
-          (
-            currentQuestion as ParsedQuestion
-          ).question_text += `\n${trimmedLine}`;
+          expectingOptions = true;
+          continue;
         }
-      });
 
-      // FIX: Explicitly assert type after null check for final push
-      if (
-        currentQuestion &&
-        (currentQuestion as ParsedQuestion).question_text &&
-        (currentQuestion as ParsedQuestion).options.length > 0 &&
-        (currentQuestion as ParsedQuestion).correct_answer
-      ) {
-        parsedQuestions.push(currentQuestion as ParsedQuestion);
+        // If we're inside a question, try to parse options
+        if (current && expectingOptions) {
+          // allow a–z prefix but typically a–d
+          const optMatch = line.match(/^([a-zA-Z])[\.:]?\s+(.*)$/);
+          if (optMatch) {
+            const key = optMatch[1].toLowerCase();
+            let text = optMatch[2].trim();
+
+            // Correct marker "<" at end
+            if (text.endsWith("<")) {
+              text = text.slice(0, -1).trim();
+              current.correct_answer = `${key}. ${text}`;
+            }
+
+            current.options.push({ key, text });
+            continue;
+          }
+
+          // If it's not an option line, treat as question text continuation
+          current.question_text = `${current.question_text}\n${line}`.trim();
+          continue;
+        }
+
+        // If we haven't created current yet but text started without Q:, treat as question text start
+        if (!current) {
+          current = {
+            question_text: line,
+            options: [],
+            correct_answer: "",
+          };
+          expectingOptions = true; // next lines should be options
+          continue;
+        }
+
+        // Otherwise, append to question text
+        current.question_text = `${current.question_text}\n${line}`.trim();
       }
 
-      const finalParsedQuestions = parsedQuestions.filter(
-        (q) => q.question_text && q.options.length > 0 && q.correct_answer
-      );
+      // final flush
+      flushIfValid();
 
-      onContentChange(finalParsedQuestions, rawHtml);
+      onContentChange(parsedQuestions, rawHtml);
     },
     editorProps: {
       attributes: {
@@ -221,20 +182,23 @@ d. Venus`,
         onContentChange([], "");
       }
     }
-    // FIX: Added editor and onContentChange to dependency array
   }, [editor, initialContent, onContentChange]);
 
   useEffect(() => {
     const style = document.createElement("style");
     style.innerHTML = `
       .correct-answer-indicator {
-        opacity: 0.5;
-        transition: opacity 0.2s ease-in-out;
+        opacity: 0.7;
+        background: rgba(34,197,94,0.08); /* subtle green bg */
+        border-radius: 0.375rem;
+        padding: 0.1rem 0.2rem;
+        transition: opacity 0.2s ease-in-out, background 0.2s ease-in-out;
       }
       .ProseMirror .correct-answer-indicator.ProseMirror-selectednode,
       .ProseMirror .correct-answer-indicator.ProseMirror-textselection,
       .ProseMirror .correct-answer-indicator:hover {
         opacity: 1;
+        background: rgba(34,197,94,0.15);
       }
     `;
     document.head.appendChild(style);
@@ -244,7 +208,7 @@ d. Venus`,
   }, []);
 
   return (
-    <div className="border border-gray-600 rounded-md overflow-hidden bg-gray-800 text-white">
+    <div className="border border-gray-600 rounded-md overflow-hidden bg-gray-900 text-gray-100">
       <EditorToolbar editor={editor} />
       <EditorContent editor={editor} className="p-4 min-h-[400px]" />
       <div className="flex justify-end p-2 text-gray-400 text-sm">
